@@ -63,8 +63,8 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const PORT = config.port;
-app.listen(PORT, () => {
+const PORT = process.env.PORT || config.port || 3000;
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Habit Tracker API running on port ${PORT}`);
   console.log(`📊 Environment: ${config.nodeEnv}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
