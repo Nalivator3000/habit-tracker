@@ -16,9 +16,9 @@ router.get('/', (req, res) => {
   });
 });
 
-// Route modules (will be added progressively)
+// Route modules
 router.use('/auth', require('./auth'));
-// router.use('/habits', require('./habits'));
+router.use('/habits', require('./habits'));
 // router.use('/metrics', require('./metrics'));
 // router.use('/users', require('./users'));
 
