@@ -3,6 +3,9 @@ const DailyRotateFile = require('winston-daily-rotate-file');
 const path = require('path');
 const fs = require('fs');
 
+// Skip detailed test logging in production
+const isProduction = process.env.NODE_ENV === 'production';
+
 // Ensure logs directory exists
 const logsDir = path.join(__dirname, '../../logs');
 if (!fs.existsSync(logsDir)) {
@@ -115,51 +118,59 @@ const loggers = {
   server: createContextLogger('SERVER')
 };
 
-// Test logging utilities
+// Test logging utilities (simplified in production)
 const testLogger = {
   startTest: (testName, description = '') => {
-    logger.info(`🧪 TEST STARTED: ${testName}`, {
-      context: 'TEST',
-      type: 'start',
-      testName,
-      description,
-      timestamp: new Date().toISOString()
-    });
+    if (!isProduction) {
+      logger.info(`🧪 TEST STARTED: ${testName}`, {
+        context: 'TEST',
+        type: 'start',
+        testName,
+        description,
+        timestamp: new Date().toISOString()
+      });
+    }
   },
 
   endTest: (testName, result, duration, details = {}) => {
-    const emoji = result === 'pass' ? '✅' : '❌';
-    logger.info(`${emoji} TEST ${result.toUpperCase()}: ${testName}`, {
-      context: 'TEST',
-      type: 'end',
-      testName,
-      result,
-      duration,
-      ...details
-    });
+    if (!isProduction) {
+      const emoji = result === 'pass' ? '✅' : '❌';
+      logger.info(`${emoji} TEST ${result.toUpperCase()}: ${testName}`, {
+        context: 'TEST',
+        type: 'end',
+        testName,
+        result,
+        duration,
+        ...details
+      });
+    }
   },
 
   testStep: (testName, step, data = {}) => {
-    logger.debug(`📋 TEST STEP: ${testName} - ${step}`, {
-      context: 'TEST',
-      type: 'step',
-      testName,
-      step,
-      ...data
-    });
+    if (!isProduction) {
+      logger.debug(`📋 TEST STEP: ${testName} - ${step}`, {
+        context: 'TEST',
+        type: 'step',
+        testName,
+        step,
+        ...data
+      });
+    }
   },
 
   assertion: (testName, assertion, result, expected, actual) => {
-    const emoji = result ? '✅' : '❌';
-    logger.debug(`${emoji} ASSERTION: ${testName} - ${assertion}`, {
-      context: 'TEST',
-      type: 'assertion',
-      testName,
-      assertion,
-      result,
-      expected,
-      actual
-    });
+    if (!isProduction) {
+      const emoji = result ? '✅' : '❌';
+      logger.debug(`${emoji} ASSERTION: ${testName} - ${assertion}`, {
+        context: 'TEST',
+        type: 'assertion',
+        testName,
+        assertion,
+        result,
+        expected,
+        actual
+      });
+    }
   }
 };
 

@@ -1,4 +1,11 @@
 const { spawn } = require('child_process');
+
+// Skip in production
+if (process.env.NODE_ENV === 'production') {
+  console.log('⚠️ Test runner is disabled in production environment');
+  process.exit(0);
+}
+
 const { testLogger } = require('./src/utils/logger');
 
 class AutoTestRunner {

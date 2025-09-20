@@ -1,0 +1,37 @@
+# Test files and directories
+tests/
+coverage/
+*.test.js
+*.test.ts
+*.test.tsx
+*.spec.js
+*.spec.ts
+*.spec.tsx
+
+# Test configuration
+jest.config.js
+test-runner.js
+README-TESTING.md
+
+# Development files
+.env.local
+.env.development
+*.log
+
+# Node modules (handled by package.json)
+node_modules/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Frontend build (if needed)
+frontend/node_modules/
+frontend/build/
+frontend/dist/
