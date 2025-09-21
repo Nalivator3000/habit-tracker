@@ -151,7 +151,9 @@ app.get('/debug/database', async (req, res) => {
 app.get('/api', (req, res) => {
   res.json({
     name: 'Habit Tracker API',
-    version: '1.0.0',
+    version: '1.2.0',
+    build: 'HABIT-TRACKER-2025.09.21-15:35',
+    commit: '60fd97c',
     description: 'Cross-platform habit tracking application API',
     endpoints: {
       authentication: {
@@ -175,9 +177,19 @@ app.get('/api', (req, res) => {
         'PUT /api/habits/logs/:id': 'Update habit log',
         'DELETE /api/habits/logs/:id': 'Delete habit log',
       },
+      admin: {
+        'POST /api/admin/setup-root': 'Setup root user',
+        'POST /api/admin/create-admin': 'Create admin user',
+        'POST /api/admin/init-database': 'Initialize database',
+        'GET /api/admin/test-env': 'Test environment variables',
+        'GET /api/admin/test-tables': 'Test database tables',
+        'GET /api/admin/test-queries': 'Test database queries',
+        'GET /api/admin/test-db': 'Test database connection',
+      },
       system: {
         'GET /health': 'Health check',
         'GET /api': 'API information',
+        'GET /env-debug.html': 'Debug interface',
       }
     },
     documentation: 'https://github.com/Nalivator3000/habit-tracker',
