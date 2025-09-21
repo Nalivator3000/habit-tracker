@@ -91,17 +91,18 @@ app.get('/api', (req, res) => {
 // API routes
 app.use('/api', require('./src/routes'));
 
-// 404 handler for API routes
-app.use('/api/*', (req, res) => {
-  res.status(404).json({
-    error: 'API route not found',
-    message: `Cannot ${req.method} ${req.originalUrl}`,
-  });
-});
-
-// Serve frontend for any other routes
+// Catch-all handler - serve frontend or API 404
 app.use((req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  // If it's an API route that wasn't handled, return 404 JSON
+  if (req.path.startsWith('/api')) {
+    res.status(404).json({
+      error: 'API route not found',
+      message: `Cannot ${req.method} ${req.originalUrl}`,
+    });
+  } else {
+    // Serve frontend for non-API routes
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  }
 });
 
 // Global error handler
