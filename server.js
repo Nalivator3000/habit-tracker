@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const config = require('./src/config');
+const { initializeDatabase } = require('./src/config/initDatabase');
 
 const app = express();
 
@@ -41,13 +42,87 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    environment: config.nodeEnv,
-    uptime: process.uptime(),
-  });
+app.get('/health', async (req, res) => {
+  try {
+    // Test database connection
+    const { pool } = require('./src/config/database');
+    const dbResult = await pool.query('SELECT NOW() as db_time');
+
+    res.status(200).json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      environment: config.nodeEnv,
+      uptime: process.uptime(),
+      database: {
+        status: 'connected',
+        time: dbResult.rows[0].db_time
+      }
+    });
+  } catch (dbError) {
+    res.status(503).json({
+      status: 'PARTIAL',
+      timestamp: new Date().toISOString(),
+      environment: config.nodeEnv,
+      uptime: process.uptime(),
+      database: {
+        status: 'disconnected',
+        error: dbError.message
+      }
+    });
+  }
+});
+
+// Database debug endpoint
+app.get('/debug/database', async (req, res) => {
+  try {
+    const { pool } = require('./src/config/database');
+
+    // Get database info
+    const versionResult = await pool.query('SELECT version() as version');
+    const tablesResult = await pool.query(`
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+      ORDER BY table_name;
+    `);
+
+    // Get table row counts
+    const tables = tablesResult.rows.map(row => row.table_name);
+    const counts = {};
+
+    for (const table of tables) {
+      try {
+        const countResult = await pool.query(`SELECT COUNT(*) as count FROM ${table}`);
+        counts[table] = parseInt(countResult.rows[0].count);
+      } catch (error) {
+        counts[table] = `Error: ${error.message}`;
+      }
+    }
+
+    res.json({
+      database: {
+        version: versionResult.rows[0].version,
+        tables: tables,
+        counts: counts,
+        environment: {
+          DATABASE_HOST: process.env.DATABASE_HOST ? '✓ Set' : '✗ Missing',
+          DATABASE_PORT: process.env.DATABASE_PORT ? '✓ Set' : '✗ Missing',
+          DATABASE_NAME: process.env.DATABASE_NAME ? '✓ Set' : '✗ Missing',
+          DATABASE_USER: process.env.DATABASE_USER ? '✓ Set' : '✗ Missing',
+          DATABASE_PASSWORD: process.env.DATABASE_PASSWORD ? '✓ Set' : '✗ Missing',
+          DB_HOST: process.env.DB_HOST ? '✓ Set' : '✗ Missing',
+          DB_NAME: process.env.DB_NAME ? '✓ Set' : '✗ Missing',
+          NODE_ENV: process.env.NODE_ENV || 'not set'
+        }
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+      stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+    });
+  }
 });
 
 // API info endpoint
@@ -120,12 +195,32 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
+// Start server with database initialization
 const PORT = process.env.PORT || config.port || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Habit Tracker API running on port ${PORT}`);
-  console.log(`📊 Environment: ${config.nodeEnv}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-});
+
+async function startServer() {
+  try {
+    // Initialize database first
+    const dbInitialized = await initializeDatabase();
+
+    if (!dbInitialized) {
+      console.error('⚠️ Database initialization failed, but continuing to start server...');
+    }
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Habit Tracker API running on port ${PORT}`);
+      console.log(`📊 Environment: ${config.nodeEnv}`);
+      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+      console.log(`🎯 Web app: http://localhost:${PORT}/app.html`);
+      console.log(`🔧 Admin setup: http://localhost:${PORT}/admin-setup.html`);
+    });
+
+  } catch (error) {
+    console.error('💥 Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 module.exports = app;

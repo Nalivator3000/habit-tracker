@@ -1,16 +1,17 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+// Railway provides DATABASE_* variables, fallback to DB_* for local development
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'habit_tracker',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD,
+  host: process.env.DATABASE_HOST || process.env.DB_HOST || 'localhost',
+  port: process.env.DATABASE_PORT || process.env.DB_PORT || 5432,
+  database: process.env.DATABASE_NAME || process.env.DB_NAME || 'habit_tracker',
+  user: process.env.DATABASE_USER || process.env.DB_USER || 'postgres',
+  password: process.env.DATABASE_PASSWORD || process.env.DB_PASSWORD,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000,
 });
 
 // Test connection
