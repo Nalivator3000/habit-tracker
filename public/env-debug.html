@@ -54,6 +54,7 @@
         <div class="section">
             <h2>Database Connection Tests</h2>
             <button onclick="testHealthEndpoint()">Test Health Endpoint</button>
+            <button onclick="testEnvironmentVariables()">Test Environment Variables</button>
             <button onclick="testDatabaseEndpoint()">Test Database Debug</button>
             <button onclick="testAdminEndpoint()">Test Admin Endpoint</button>
             <button onclick="testDatabaseTables()">Test Database Tables</button>
@@ -167,6 +168,33 @@
                 }
             } catch (error) {
                 log('dbResults', `❌ Query Test Failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testEnvironmentVariables() {
+            log('dbResults', 'Testing environment variables...', 'info');
+            try {
+                const response = await fetch('/api/admin/test-env');
+                const data = await response.json();
+
+                if (response.ok) {
+                    log('dbResults', `✅ Environment Variables:`, 'success');
+                    log('dbResults', `📊 Summary: ${JSON.stringify(data.summary, null, 2)}`, 'info');
+                    log('dbResults', `🔧 Variables: ${JSON.stringify(data.environment, null, 2)}`, 'info');
+
+                    // Specific diagnostics
+                    if (!data.summary.hasAnyDbVars) {
+                        log('dbResults', `🚨 PROBLEM: No database environment variables found at all!`, 'error');
+                        log('dbResults', `🔧 SOLUTION: Check Railway service linking`, 'warning');
+                    } else if (!data.summary.hasPgVariables && !data.summary.hasDatabaseUrl) {
+                        log('dbResults', `🚨 PROBLEM: Database variables exist but not accessible`, 'error');
+                        log('dbResults', `🔧 Found variables: ${data.environment.allEnvVarNames.join(', ')}`, 'info');
+                    }
+                } else {
+                    log('dbResults', `❌ Environment Test Error: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log('dbResults', `❌ Environment Test Failed: ${error.message}`, 'error');
             }
         }
 

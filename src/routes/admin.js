@@ -307,4 +307,62 @@ router.post('/init-database', async (req, res) => {
   }
 });
 
+// Test environment variables
+router.get('/test-env', async (req, res) => {
+  try {
+    console.log('🔍 Testing environment variables...');
+
+    // Get all environment variables that might be related to database
+    const envVars = {
+      // Standard DATABASE_* variables
+      DATABASE_URL: process.env.DATABASE_URL || null,
+      DATABASE_HOST: process.env.DATABASE_HOST || null,
+      DATABASE_PORT: process.env.DATABASE_PORT || null,
+      DATABASE_NAME: process.env.DATABASE_NAME || null,
+      DATABASE_USER: process.env.DATABASE_USER || null,
+      DATABASE_PASSWORD: process.env.DATABASE_PASSWORD ? '[HIDDEN]' : null,
+
+      // Railway PG* variables
+      PGHOST: process.env.PGHOST || null,
+      PGPORT: process.env.PGPORT || null,
+      PGDATABASE: process.env.PGDATABASE || null,
+      PGUSER: process.env.PGUSER || null,
+      PGPASSWORD: process.env.PGPASSWORD ? '[HIDDEN]' : null,
+
+      // Other common variables
+      NODE_ENV: process.env.NODE_ENV || null,
+      PORT: process.env.PORT || null,
+
+      // All environment variable names (for debugging)
+      allEnvVarNames: Object.keys(process.env).filter(key =>
+        key.includes('PG') ||
+        key.includes('DATABASE') ||
+        key.includes('DB_') ||
+        key.includes('POSTGRES')
+      ).sort()
+    };
+
+    res.json({
+      success: true,
+      environment: envVars,
+      summary: {
+        hasDatabaseUrl: !!process.env.DATABASE_URL,
+        hasPgVariables: !!(process.env.PGHOST && process.env.PGDATABASE && process.env.PGUSER && process.env.PGPASSWORD),
+        hasAnyDbVars: Object.keys(process.env).some(key =>
+          key.includes('PG') || key.includes('DATABASE') || key.includes('DB_')
+        ),
+        totalEnvVars: Object.keys(process.env).length
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Environment test error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 module.exports = router;
