@@ -18,7 +18,8 @@
     "test:bot": "node scripts/run-tests.js bot",
     "test:coverage": "node scripts/run-tests.js coverage",
     "test:watch": "node scripts/test-watch.js",
-    "test:all": "node scripts/run-tests.js all"
+    "test:all": "node scripts/run-tests.js all",
+    "create-admin": "node create-admin.js"
   },
   "keywords": [
     "habit",

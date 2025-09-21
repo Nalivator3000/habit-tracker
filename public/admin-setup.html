@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Tracker - Admin Setup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 500px;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .setup-form {
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            width: 100%;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .result {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+        .success {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .loading {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .links {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .link {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Admin Setup</h1>
+        <p>Create administrative user for testing and management</p>
+
+        <div class="setup-form">
+            <div class="form-group">
+                <label>Admin Email</label>
+                <input type="email" id="adminEmail" value="root" placeholder="Enter admin email">
+            </div>
+            <div class="form-group">
+                <label>Admin Password</label>
+                <input type="password" id="adminPassword" value="root" placeholder="Enter admin password">
+            </div>
+            <div class="form-group">
+                <label>Admin Name</label>
+                <input type="text" id="adminName" value="Root Admin" placeholder="Enter admin name">
+            </div>
+            <button class="btn" onclick="createAdmin()">Create Admin User</button>
+        </div>
+
+        <div id="result"></div>
+
+        <div class="links">
+            <a href="/" class="link">🏠 Home</a>
+            <a href="/app.html" class="link">🚀 Launch App</a>
+            <a href="/health" class="link">🔍 Health Check</a>
+        </div>
+    </div>
+
+    <script>
+        async function createAdmin() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            const name = document.getElementById('adminName').value;
+            const resultDiv = document.getElementById('result');
+
+            if (!email || !password || !name) {
+                showResult('Please fill in all fields', 'error');
+                return;
+            }
+
+            showResult('<div class="spinner"></div>Creating admin user...', 'loading');
+
+            try {
+                // First try to register the admin user
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        name: name
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult(`✅ Admin user created successfully!
+
+📧 Email: ${email}
+🔑 Password: ${password}
+👤 Name: ${name}
+🎫 Token: ${data.token ? 'Generated' : 'Not provided'}
+
+You can now login to the application with these credentials.`, 'success');
+
+                    // Auto-fill quick login
+                    setTimeout(() => {
+                        const loginUrl = `/app.html?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
+                        showResult(`✅ Admin user created successfully!
+
+📧 Email: ${email}
+🔑 Password: ${password}
+👤 Name: ${name}
+
+🚀 Quick Login: Click the button below
+<div style="margin-top: 1rem;">
+    <a href="${loginUrl}" class="btn" style="display: inline-block; text-decoration: none;">Login as Admin</a>
+</div>`, 'success');
+                    }, 1000);
+
+                } else {
+                    // If user already exists, that's also success for our purposes
+                    if (data.message && data.message.includes('already exists')) {
+                        showResult(`⚠️ User already exists
+
+📧 Email: ${email}
+🔑 Password: ${password}
+👤 Name: ${name}
+
+You can try logging in with these credentials.
+If the password is different, you may need to update it.
+
+🚀 Try Login:
+<div style="margin-top: 1rem;">
+    <a href="/app.html" class="btn" style="display: inline-block; text-decoration: none;">Go to Login</a>
+</div>`, 'success');
+                    } else {
+                        showResult(`❌ Failed to create admin user
+
+Error: ${data.message || 'Unknown error'}
+
+Please check the server logs for more details.`, 'error');
+                    }
+                }
+
+            } catch (error) {
+                console.error('Admin creation error:', error);
+                showResult(`❌ Network error
+
+Failed to connect to the API.
+Error: ${error.message}
+
+Please check:
+- Server is running
+- Database is connected
+- Network connectivity`, 'error');
+            }
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = `result ${type}`;
+        }
+
+        // Auto-fill from URL parameters if provided
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const email = urlParams.get('email');
+            const password = urlParams.get('password');
+            const name = urlParams.get('name');
+
+            if (email) document.getElementById('adminEmail').value = email;
+            if (password) document.getElementById('adminPassword').value = password;
+            if (name) document.getElementById('adminName').value = name;
+        });
+    </script>
+</body>
+</html>
