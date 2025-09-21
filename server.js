@@ -47,33 +47,45 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Health check endpoint
+// Health check endpoint with graceful database handling
 app.get('/health', async (req, res) => {
-  try {
-    // Test database connection
-    const { pool } = require('./src/config/database');
-    const dbResult = await pool.query('SELECT NOW() as db_time');
+  const { checkConnection } = require('./src/config/database');
 
+  // Always return basic server health
+  const baseResponse = {
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: config.nodeEnv,
+    uptime: process.uptime(),
+    config: {
+      hasDbUrl: !!process.env.DATABASE_URL,
+      hasDbHost: !!process.env.DATABASE_HOST,
+      hasDbPassword: !!process.env.DATABASE_PASSWORD,
+      nodeEnv: process.env.NODE_ENV
+    }
+  };
+
+  // Test database connection without failing the endpoint
+  const dbStatus = await checkConnection();
+
+  if (dbStatus.connected) {
     res.status(200).json({
-      status: 'OK',
-      timestamp: new Date().toISOString(),
-      environment: config.nodeEnv,
-      uptime: process.uptime(),
+      ...baseResponse,
       database: {
         status: 'connected',
-        time: dbResult.rows[0].db_time
+        time: dbStatus.time
       }
     });
-  } catch (dbError) {
-    res.status(503).json({
+  } else {
+    // Server is healthy, database is not - return 200 with warning
+    res.status(200).json({
+      ...baseResponse,
       status: 'PARTIAL',
-      timestamp: new Date().toISOString(),
-      environment: config.nodeEnv,
-      uptime: process.uptime(),
       database: {
         status: 'disconnected',
-        error: dbError.message
-      }
+        error: dbStatus.error
+      },
+      warning: 'Database unavailable - server running with limited functionality'
     });
   }
 });

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Habit Tracker</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 2rem;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #222;
+        }
+        .success { color: #00ff00; }
+        .error { color: #ff0000; }
+        .warning { color: #ffff00; }
+        .info { color: #00ffff; }
+        button {
+            background: #333;
+            color: #00ff00;
+            border: 1px solid #555;
+            padding: 0.5rem 1rem;
+            margin: 0.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #444;
+        }
+        pre {
+            background: #111;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Habit Tracker Debug Console</h1>
+
+    <div class="section">
+        <h2>System Tests</h2>
+        <button onclick="testHealth()">Test Health Endpoint</button>
+        <button onclick="testDatabase()">Test Database</button>
+        <button onclick="testAPI()">Test API Endpoints</button>
+        <button onclick="testAdmin()">Test Admin Endpoint</button>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <div id="results"></div>
+    </div>
+
+    <div class="section">
+        <h2>Quick Admin Creation</h2>
+        <input type="text" id="adminEmail" placeholder="Email" value="root">
+        <input type="password" id="adminPassword" placeholder="Password" value="root">
+        <input type="text" id="adminName" placeholder="Name" value="Root Admin">
+        <button onclick="createAdminDebug()">Create Admin (Debug)</button>
+        <div id="adminResults"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const timestamp = new Date().toISOString();
+            const colors = {
+                success: 'success',
+                error: 'error',
+                warning: 'warning',
+                info: 'info'
+            };
+
+            const div = document.getElementById('results');
+            div.innerHTML += `<div class="${colors[type]}">[${timestamp}] ${message}</div>`;
+            div.scrollTop = div.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        async function testHealth() {
+            log('Testing health endpoint...', 'info');
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+
+                if (response.ok) {
+                    log(`✅ Health OK: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log(`⚠️ Health issues: ${JSON.stringify(data, null, 2)}`, 'warning');
+                }
+            } catch (error) {
+                log(`❌ Health check failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDatabase() {
+            log('Testing database endpoint...', 'info');
+            try {
+                const response = await fetch('/debug/database');
+                const data = await response.json();
+
+                if (response.ok) {
+                    log(`✅ Database OK: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log(`❌ Database error: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Database test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAPI() {
+            log('Testing API info endpoint...', 'info');
+            try {
+                const response = await fetch('/api');
+                const data = await response.json();
+
+                if (response.ok) {
+                    log(`✅ API OK: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log(`❌ API error: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ API test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAdmin() {
+            log('Testing admin endpoint...', 'info');
+            try {
+                const response = await fetch('/api/admin/test-db');
+                const data = await response.json();
+
+                if (response.ok) {
+                    log(`✅ Admin endpoint OK: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log(`❌ Admin endpoint error: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Admin test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function createAdminDebug() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            const name = document.getElementById('adminName').value;
+
+            log(`Creating admin user: ${email}`, 'info');
+
+            try {
+                const response = await fetch('/api/admin/create-admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password, name })
+                });
+
+                const data = await response.json();
+
+                log(`Response status: ${response.status}`, 'info');
+                log(`Response headers: ${JSON.stringify([...response.headers.entries()])}`, 'info');
+
+                if (response.ok) {
+                    log(`✅ Admin created: ${JSON.stringify(data, null, 2)}`, 'success');
+                    document.getElementById('adminResults').innerHTML = `
+                        <div class="success">
+                            ✅ Admin user created/updated successfully!<br>
+                            Email: ${email}<br>
+                            Password: ${password}<br>
+                            Name: ${name}
+                        </div>
+                    `;
+                } else {
+                    log(`❌ Admin creation failed: ${JSON.stringify(data, null, 2)}`, 'error');
+                    document.getElementById('adminResults').innerHTML = `
+                        <div class="error">
+                            ❌ Failed: ${data.message || 'Unknown error'}<br>
+                            Details: ${JSON.stringify(data, null, 2)}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                log(`❌ Network error: ${error.message}`, 'error');
+                document.getElementById('adminResults').innerHTML = `
+                    <div class="error">
+                        ❌ Network error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function runAllTests() {
+            log('🔄 Running all tests...', 'info');
+            document.getElementById('results').innerHTML = '';
+
+            await testHealth();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testDatabase();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testAPI();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testAdmin();
+
+            log('🎉 All tests completed!', 'success');
+        }
+
+        // Auto-run tests on load
+        window.addEventListener('load', () => {
+            log('🚀 Debug console loaded', 'info');
+            log('Click "Run All Tests" to diagnose the system', 'info');
+        });
+    </script>
+</body>
+</html>
