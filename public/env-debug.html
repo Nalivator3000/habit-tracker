@@ -67,6 +67,7 @@ Status: Production Ready
             <button onclick="testDatabaseEndpoint()">Test Database Debug</button>
             <button onclick="testAdminEndpoint()">Test Admin Endpoint</button>
             <button onclick="testDatabaseTables()">Test Database Tables</button>
+            <button onclick="checkUsersSchema()">Check Users Schema</button>
             <button onclick="testDatabaseQueries()">Test Database Queries</button>
             <button onclick="initializeDatabase()">Initialize Database</button>
             <button onclick="fixDatabaseSchema()">Fix Database Schema</button>
@@ -173,6 +174,36 @@ Status: Production Ready
                 }
             } catch (error) {
                 log('dbResults', `❌ Table Test Failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkUsersSchema() {
+            log('dbResults', 'Checking users table schema...', 'info');
+            try {
+                // Use the existing test-tables endpoint to get users table structure
+                const response = await fetch('/api/admin/test-tables');
+                const data = await response.json();
+
+                if (response.ok) {
+                    log('dbResults', `📋 Users Table Structure:`, 'info');
+                    if (data.usersTableStructure) {
+                        data.usersTableStructure.forEach(col => {
+                            const hasIsActive = col.column_name === 'is_active';
+                            log('dbResults', `  ${col.column_name}: ${col.data_type} ${hasIsActive ? '✅' : ''}`, hasIsActive ? 'success' : 'info');
+                        });
+
+                        const hasIsActive = data.usersTableStructure.some(col => col.column_name === 'is_active');
+                        if (hasIsActive) {
+                            log('dbResults', `✅ is_active column EXISTS`, 'success');
+                        } else {
+                            log('dbResults', `❌ is_active column MISSING - need to fix schema again`, 'error');
+                        }
+                    }
+                } else {
+                    log('dbResults', `❌ Schema Check Error: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log('dbResults', `❌ Schema Check Failed: ${error.message}`, 'error');
             }
         }
 
