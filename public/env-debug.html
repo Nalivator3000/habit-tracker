@@ -75,6 +75,16 @@ Status: Production Ready
         </div>
 
         <div class="section">
+            <h2>Login Testing</h2>
+            <div>
+                <input type="text" id="testEmail" value="root" placeholder="Username">
+                <input type="password" id="testPassword" value="root" placeholder="Password">
+                <button onclick="testDetailedLogin()">Test Detailed Login</button>
+            </div>
+            <div id="loginResults"></div>
+        </div>
+
+        <div class="section">
             <h2>Manual Admin Creation</h2>
             <div>
                 <input type="text" id="adminEmail" value="root" placeholder="Email">
@@ -288,6 +298,48 @@ Status: Production Ready
                 }
             } catch (error) {
                 log('dbResults', `❌ Root Setup Failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDetailedLogin() {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+
+            log('loginResults', `Testing detailed login: ${email}`, 'info');
+
+            try {
+                const response = await fetch('/api/admin/test-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                log('loginResults', `Test Login Response: ${JSON.stringify(data, null, 2)}`, data.success ? 'success' : 'error');
+
+                // Also test the real login endpoint
+                log('loginResults', 'Testing real login endpoint...', 'info');
+                try {
+                    const realLoginResponse = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const realLoginData = await realLoginResponse.json();
+                    log('loginResults', `Real Login Status: ${realLoginResponse.status}`, 'info');
+                    log('loginResults', `Real Login Data: ${JSON.stringify(realLoginData, null, 2)}`, realLoginResponse.ok ? 'success' : 'error');
+                } catch (realLoginError) {
+                    log('loginResults', `❌ Real Login Failed: ${realLoginError.message}`, 'error');
+                }
+
+            } catch (error) {
+                log('loginResults', `❌ Test Login Failed: ${error.message}`, 'error');
             }
         }
 

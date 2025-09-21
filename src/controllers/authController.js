@@ -55,11 +55,16 @@ const register = async (req, res) => {
 // Login user
 const login = async (req, res) => {
   try {
+    console.log('🔐 Login attempt:', { email: req.body.email, hasPassword: !!req.body.password });
     const { email, password } = req.body;
 
     // Find user by email
+    console.log('👤 Searching for user:', email);
     const user = await User.findByEmail(email);
+    console.log('👤 User found:', user ? { id: user.id, email: user.email } : 'null');
+
     if (!user) {
+      console.log('❌ User not found');
       return res.status(401).json({
         error: 'Invalid credentials',
         message: 'Email or password is incorrect',
@@ -67,8 +72,12 @@ const login = async (req, res) => {
     }
 
     // Verify password
+    console.log('🔑 Verifying password...');
     const isValidPassword = await user.verifyPassword(password);
+    console.log('🔑 Password valid:', isValidPassword);
+
     if (!isValidPassword) {
+      console.log('❌ Invalid password');
       return res.status(401).json({
         error: 'Invalid credentials',
         message: 'Email or password is incorrect',
@@ -76,21 +85,30 @@ const login = async (req, res) => {
     }
 
     // Update last active
+    console.log('⏰ Updating last active...');
     await user.updateLastActive();
 
     // Generate tokens
+    console.log('🎫 Generating tokens...');
     const tokens = generateTokenPair(user);
+    console.log('🎫 Tokens generated successfully');
 
+    console.log('✅ Login successful for:', user.email);
     res.json({
       message: 'Login successful',
       user: user.toJSON(),
       ...tokens,
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('❌ Login error details:', {
+      message: error.message,
+      stack: error.stack,
+      email: req.body?.email
+    });
     res.status(500).json({
       error: 'Login failed',
       message: 'An error occurred during login',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

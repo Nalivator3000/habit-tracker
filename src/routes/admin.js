@@ -407,4 +407,79 @@ router.post('/setup-root', async (req, res) => {
   }
 });
 
+// Test login endpoint with detailed logging
+router.post('/test-login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    console.log('🧪 Admin test login:', { email, hasPassword: !!password });
+
+    // Import auth controller for testing
+    const User = require('../models/User');
+    const { generateTokenPair } = require('../utils/jwt');
+
+    // Step 1: Find user
+    console.log('1️⃣ Finding user...');
+    const user = await User.findByEmail(email);
+    console.log('1️⃣ User result:', user ? {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      is_active: user.is_active
+    } : 'null');
+
+    if (!user) {
+      return res.json({
+        success: false,
+        step: 'find_user',
+        error: 'User not found',
+        email: email
+      });
+    }
+
+    // Step 2: Verify password
+    console.log('2️⃣ Verifying password...');
+    const isValidPassword = await user.verifyPassword(password);
+    console.log('2️⃣ Password valid:', isValidPassword);
+
+    if (!isValidPassword) {
+      return res.json({
+        success: false,
+        step: 'verify_password',
+        error: 'Invalid password',
+        user: { id: user.id, email: user.email }
+      });
+    }
+
+    // Step 3: Generate tokens
+    console.log('3️⃣ Generating tokens...');
+    const tokens = generateTokenPair(user);
+    console.log('3️⃣ Tokens generated');
+
+    // Step 4: Update last active
+    console.log('4️⃣ Updating last active...');
+    await user.updateLastActive();
+    console.log('4️⃣ Last active updated');
+
+    res.json({
+      success: true,
+      message: 'Test login successful',
+      user: user.toJSON(),
+      tokens: {
+        hasAccessToken: !!tokens.access_token,
+        hasRefreshToken: !!tokens.refresh_token,
+        tokenLength: tokens.access_token?.length || 0
+      }
+    });
+
+  } catch (error) {
+    console.error('🧪 Test login error:', error);
+    res.json({
+      success: false,
+      step: 'unknown',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 module.exports = router;
