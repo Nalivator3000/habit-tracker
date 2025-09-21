@@ -122,4 +122,95 @@ router.get('/test-db', async (req, res) => {
   }
 });
 
+// Test database tables
+router.get('/test-tables', async (req, res) => {
+  try {
+    console.log('🔍 Testing database tables...');
+
+    // Check if tables exist
+    const tablesQuery = `
+      SELECT table_name, table_type
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+      ORDER BY table_name;
+    `;
+
+    const tablesResult = await query(tablesQuery);
+
+    // Check users table structure
+    const usersColumnsQuery = `
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns
+      WHERE table_name = 'users' AND table_schema = 'public'
+      ORDER BY ordinal_position;
+    `;
+
+    const usersColumns = await query(usersColumnsQuery);
+
+    res.json({
+      success: true,
+      tables: tablesResult.rows,
+      usersTableStructure: usersColumns.rows,
+      tableCount: tablesResult.rows.length
+    });
+
+  } catch (error) {
+    console.error('❌ Table test error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      code: error.code,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Test database queries
+router.get('/test-queries', async (req, res) => {
+  try {
+    console.log('🔍 Testing database queries...');
+
+    // Test basic connection
+    const timeResult = await query('SELECT NOW() as current_time, version() as postgres_version');
+
+    // Test users table
+    const userCountResult = await query('SELECT COUNT(*) as user_count FROM users');
+
+    // Test if users table has proper structure
+    const sampleUser = await query('SELECT id, email, name, created_at FROM users LIMIT 1');
+
+    // Test creating/dropping a test table
+    await query('CREATE TABLE IF NOT EXISTS test_connection (id SERIAL PRIMARY KEY, test_data TEXT)');
+    await query('INSERT INTO test_connection (test_data) VALUES ($1)', ['Connection test']);
+    const testResult = await query('SELECT * FROM test_connection WHERE test_data = $1', ['Connection test']);
+    await query('DROP TABLE IF EXISTS test_connection');
+
+    res.json({
+      success: true,
+      connectionTest: {
+        time: timeResult.rows[0].current_time,
+        version: timeResult.rows[0].postgres_version
+      },
+      userTable: {
+        count: parseInt(userCountResult.rows[0].user_count),
+        sampleUser: sampleUser.rows[0] || null
+      },
+      queryTest: {
+        testTableCreated: true,
+        testDataInserted: testResult.rows.length > 0,
+        testTableDropped: true
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Query test error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      code: error.code,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 module.exports = router;

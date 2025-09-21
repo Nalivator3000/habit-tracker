@@ -56,6 +56,9 @@
             <button onclick="testHealthEndpoint()">Test Health Endpoint</button>
             <button onclick="testDatabaseEndpoint()">Test Database Debug</button>
             <button onclick="testAdminEndpoint()">Test Admin Endpoint</button>
+            <button onclick="testDatabaseTables()">Test Database Tables</button>
+            <button onclick="testDatabaseQueries()">Test Database Queries</button>
+            <button onclick="runAllDatabaseTests()">Run All DB Tests</button>
             <div id="dbResults"></div>
         </div>
 
@@ -134,6 +137,59 @@
             }
         }
 
+        async function testDatabaseTables() {
+            log('dbResults', 'Testing database tables...', 'info');
+            try {
+                const response = await fetch('/api/admin/test-tables');
+                const data = await response.json();
+
+                if (response.ok) {
+                    log('dbResults', `✅ Database Tables: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log('dbResults', `❌ Table Test Error: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log('dbResults', `❌ Table Test Failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDatabaseQueries() {
+            log('dbResults', 'Testing database queries...', 'info');
+            try {
+                const response = await fetch('/api/admin/test-queries');
+                const data = await response.json();
+
+                if (response.ok) {
+                    log('dbResults', `✅ Database Queries: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log('dbResults', `❌ Query Test Error: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log('dbResults', `❌ Query Test Failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function runAllDatabaseTests() {
+            log('dbResults', '🔄 Running comprehensive database tests...', 'info');
+            document.getElementById('dbResults').innerHTML = '';
+
+            await testHealthEndpoint();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testDatabaseEndpoint();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testDatabaseTables();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testDatabaseQueries();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testAdminEndpoint();
+
+            log('dbResults', '🎉 All database tests completed!', 'success');
+        }
+
         async function createAdmin() {
             const email = document.getElementById('adminEmail').value;
             const password = document.getElementById('adminPassword').value;
@@ -154,6 +210,26 @@
 
                 log('adminResults', `Response Status: ${response.status}`, 'info');
                 log('adminResults', `Response Data: ${JSON.stringify(data, null, 2)}`, response.ok ? 'success' : 'error');
+
+                // Test login after creation
+                if (response.ok) {
+                    log('adminResults', 'Testing login after creation...', 'info');
+                    try {
+                        const loginResponse = await fetch('/api/auth/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ email, password })
+                        });
+
+                        const loginData = await loginResponse.json();
+                        log('adminResults', `Login Status: ${loginResponse.status}`, 'info');
+                        log('adminResults', `Login Data: ${JSON.stringify(loginData, null, 2)}`, loginResponse.ok ? 'success' : 'error');
+                    } catch (loginError) {
+                        log('adminResults', `❌ Login Test Failed: ${loginError.message}`, 'error');
+                    }
+                }
 
             } catch (error) {
                 log('adminResults', `❌ Admin Creation Failed: ${error.message}`, 'error');
