@@ -482,4 +482,69 @@ router.post('/test-login', async (req, res) => {
   }
 });
 
+// Fix database schema - add missing columns
+router.post('/fix-schema', async (req, res) => {
+  try {
+    console.log('🔧 Fixing database schema...');
+
+    // Add missing columns to users table
+    const schemaFixes = [
+      {
+        name: 'is_active',
+        sql: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true'
+      },
+      {
+        name: 'email_verified',
+        sql: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false'
+      },
+      {
+        name: 'last_active',
+        sql: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active TIMESTAMP WITH TIME ZONE'
+      },
+      {
+        name: 'password_reset_token',
+        sql: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(255)'
+      },
+      {
+        name: 'password_reset_expires',
+        sql: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires TIMESTAMP WITH TIME ZONE'
+      }
+    ];
+
+    const results = [];
+
+    for (const fix of schemaFixes) {
+      try {
+        console.log(`Adding column: ${fix.name}`);
+        await query(fix.sql);
+        results.push({ column: fix.name, status: 'success' });
+        console.log(`✅ Added column: ${fix.name}`);
+      } catch (error) {
+        console.log(`⚠️ Column ${fix.name} error:`, error.message);
+        results.push({ column: fix.name, status: 'error', error: error.message });
+      }
+    }
+
+    // Update existing users to have proper defaults
+    await query('UPDATE users SET is_active = true WHERE is_active IS NULL');
+    await query('UPDATE users SET email_verified = false WHERE email_verified IS NULL');
+
+    console.log('✅ Schema fixes completed');
+
+    res.json({
+      success: true,
+      message: 'Database schema fixed',
+      fixes: results
+    });
+
+  } catch (error) {
+    console.error('❌ Schema fix error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 module.exports = router;

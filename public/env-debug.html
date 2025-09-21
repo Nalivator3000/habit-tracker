@@ -69,6 +69,7 @@ Status: Production Ready
             <button onclick="testDatabaseTables()">Test Database Tables</button>
             <button onclick="testDatabaseQueries()">Test Database Queries</button>
             <button onclick="initializeDatabase()">Initialize Database</button>
+            <button onclick="fixDatabaseSchema()">Fix Database Schema</button>
             <button onclick="setupRootUser()">Setup Root User</button>
             <button onclick="runAllDatabaseTests()">Run All DB Tests</button>
             <div id="dbResults"></div>
@@ -259,6 +260,28 @@ Status: Production Ready
             await testAdminEndpoint();
 
             log('dbResults', '🎉 All database tests completed!', 'success');
+        }
+
+        async function fixDatabaseSchema() {
+            log('dbResults', 'Fixing database schema (adding missing columns)...', 'info');
+            try {
+                const response = await fetch('/api/admin/fix-schema', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    log('dbResults', `✅ Schema Fixed: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log('dbResults', `❌ Schema Fix Error: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log('dbResults', `❌ Schema Fix Failed: ${error.message}`, 'error');
+            }
         }
 
         async function setupRootUser() {
