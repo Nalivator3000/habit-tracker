@@ -61,6 +61,10 @@ app.get('/health', async (req, res) => {
       hasDbUrl: !!process.env.DATABASE_URL,
       hasDbHost: !!process.env.DATABASE_HOST,
       hasDbPassword: !!process.env.DATABASE_PASSWORD,
+      hasPgHost: !!process.env.PGHOST,
+      hasPgDatabase: !!process.env.PGDATABASE,
+      hasPgUser: !!process.env.PGUSER,
+      hasPgPassword: !!process.env.PGPASSWORD,
       nodeEnv: process.env.NODE_ENV
     }
   };

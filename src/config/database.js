@@ -14,13 +14,13 @@ if (process.env.DATABASE_URL) {
     connectionTimeoutMillis: 10000,
   });
 } else {
-  // Fallback to individual environment variables
+  // Fallback to individual environment variables (Railway uses PG* variables)
   pool = new Pool({
-    host: process.env.DATABASE_HOST || process.env.DB_HOST || 'localhost',
-    port: process.env.DATABASE_PORT || process.env.DB_PORT || 5432,
-    database: process.env.DATABASE_NAME || process.env.DB_NAME || 'habit_tracker',
-    user: process.env.DATABASE_USER || process.env.DB_USER || 'postgres',
-    password: process.env.DATABASE_PASSWORD || process.env.DB_PASSWORD,
+    host: process.env.PGHOST || process.env.DATABASE_HOST || process.env.DB_HOST || 'localhost',
+    port: process.env.PGPORT || process.env.DATABASE_PORT || process.env.DB_PORT || 5432,
+    database: process.env.PGDATABASE || process.env.DATABASE_NAME || process.env.DB_NAME || 'habit_tracker',
+    user: process.env.PGUSER || process.env.DATABASE_USER || process.env.DB_USER || 'postgres',
+    password: process.env.PGPASSWORD || process.env.DATABASE_PASSWORD || process.env.DB_PASSWORD,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     max: 20,
     idleTimeoutMillis: 30000,
@@ -32,10 +32,12 @@ if (process.env.DATABASE_URL) {
 console.log('🔧 Database configuration:');
 console.log('- NODE_ENV:', process.env.NODE_ENV);
 console.log('- DATABASE_URL:', process.env.DATABASE_URL ? 'Set (using connection string)' : 'Not set');
+console.log('- PGHOST:', process.env.PGHOST || 'Not set');
+console.log('- PGDATABASE:', process.env.PGDATABASE || 'Not set');
+console.log('- PGUSER:', process.env.PGUSER || 'Not set');
+console.log('- PGPASSWORD:', process.env.PGPASSWORD ? 'Set' : 'Not set');
 console.log('- DATABASE_HOST:', process.env.DATABASE_HOST || 'Not set');
 console.log('- DATABASE_NAME:', process.env.DATABASE_NAME || 'Not set');
-console.log('- DATABASE_USER:', process.env.DATABASE_USER || 'Not set');
-console.log('- DATABASE_PASSWORD:', process.env.DATABASE_PASSWORD ? 'Set' : 'Not set');
 
 // Test connection
 pool.on('connect', () => {
