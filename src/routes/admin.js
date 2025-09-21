@@ -482,59 +482,126 @@ router.post('/test-login', async (req, res) => {
   }
 });
 
-// Fix database schema - add missing columns
+// Fix database schema - add missing columns with proper verification
 router.post('/fix-schema', async (req, res) => {
   try {
     console.log('🔧 Fixing database schema...');
 
-    // Add missing columns to users table
-    const schemaFixes = [
+    // First, check current table structure
+    console.log('📋 Checking current table structure...');
+    const currentColumns = await query(`
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns
+      WHERE table_name = 'users'
+      ORDER BY ordinal_position
+    `);
+
+    console.log('📋 Current users table columns:');
+    currentColumns.rows.forEach(col => {
+      console.log(`  ${col.column_name}: ${col.data_type} (nullable: ${col.is_nullable})`);
+    });
+
+    // Define required columns
+    const requiredColumns = [
       {
         name: 'is_active',
-        sql: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true'
+        sql: 'ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT true',
+        check: 'SELECT column_name FROM information_schema.columns WHERE table_name = \'users\' AND column_name = \'is_active\''
       },
       {
         name: 'email_verified',
-        sql: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false'
+        sql: 'ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT false',
+        check: 'SELECT column_name FROM information_schema.columns WHERE table_name = \'users\' AND column_name = \'email_verified\''
       },
       {
         name: 'last_active',
-        sql: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active TIMESTAMP WITH TIME ZONE'
+        sql: 'ALTER TABLE users ADD COLUMN last_active TIMESTAMP WITH TIME ZONE',
+        check: 'SELECT column_name FROM information_schema.columns WHERE table_name = \'users\' AND column_name = \'last_active\''
       },
       {
         name: 'password_reset_token',
-        sql: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(255)'
+        sql: 'ALTER TABLE users ADD COLUMN password_reset_token VARCHAR(255)',
+        check: 'SELECT column_name FROM information_schema.columns WHERE table_name = \'users\' AND column_name = \'password_reset_token\''
       },
       {
         name: 'password_reset_expires',
-        sql: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires TIMESTAMP WITH TIME ZONE'
+        sql: 'ALTER TABLE users ADD COLUMN password_reset_expires TIMESTAMP WITH TIME ZONE',
+        check: 'SELECT column_name FROM information_schema.columns WHERE table_name = \'users\' AND column_name = \'password_reset_expires\''
       }
     ];
 
     const results = [];
 
-    for (const fix of schemaFixes) {
+    for (const column of requiredColumns) {
       try {
-        console.log(`Adding column: ${fix.name}`);
-        await query(fix.sql);
-        results.push({ column: fix.name, status: 'success' });
-        console.log(`✅ Added column: ${fix.name}`);
+        // Check if column already exists
+        console.log(`🔍 Checking if column ${column.name} exists...`);
+        const checkResult = await query(column.check);
+
+        if (checkResult.rows.length > 0) {
+          console.log(`✅ Column ${column.name} already exists`);
+          results.push({ column: column.name, status: 'already_exists' });
+        } else {
+          console.log(`➕ Adding column: ${column.name}`);
+          await query(column.sql);
+
+          // Verify the column was actually added
+          const verifyResult = await query(column.check);
+          if (verifyResult.rows.length > 0) {
+            console.log(`✅ Successfully added column: ${column.name}`);
+            results.push({ column: column.name, status: 'added_successfully' });
+          } else {
+            console.log(`❌ Failed to add column: ${column.name}`);
+            results.push({ column: column.name, status: 'failed_to_add' });
+          }
+        }
       } catch (error) {
-        console.log(`⚠️ Column ${fix.name} error:`, error.message);
-        results.push({ column: fix.name, status: 'error', error: error.message });
+        console.log(`⚠️ Column ${column.name} error:`, error.message);
+        results.push({ column: column.name, status: 'error', error: error.message });
       }
     }
 
-    // Update existing users to have proper defaults
-    await query('UPDATE users SET is_active = true WHERE is_active IS NULL');
-    await query('UPDATE users SET email_verified = false WHERE email_verified IS NULL');
+    // Update existing users to have proper defaults (only for columns that exist)
+    try {
+      const isActiveExists = results.find(r => r.column === 'is_active')?.status === 'added_successfully' ||
+                            results.find(r => r.column === 'is_active')?.status === 'already_exists';
+      const emailVerifiedExists = results.find(r => r.column === 'email_verified')?.status === 'added_successfully' ||
+                                 results.find(r => r.column === 'email_verified')?.status === 'already_exists';
+
+      if (isActiveExists) {
+        await query('UPDATE users SET is_active = true WHERE is_active IS NULL');
+        console.log('✅ Updated is_active defaults');
+      }
+
+      if (emailVerifiedExists) {
+        await query('UPDATE users SET email_verified = false WHERE email_verified IS NULL');
+        console.log('✅ Updated email_verified defaults');
+      }
+    } catch (updateError) {
+      console.log('⚠️ Error updating defaults:', updateError.message);
+    }
+
+    // Final verification - check table structure again
+    console.log('🔍 Final verification of table structure...');
+    const finalColumns = await query(`
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns
+      WHERE table_name = 'users'
+      ORDER BY ordinal_position
+    `);
 
     console.log('✅ Schema fixes completed');
 
     res.json({
       success: true,
       message: 'Database schema fixed',
-      fixes: results
+      fixes: results,
+      verification: {
+        beforeColumns: currentColumns.rows.map(c => c.column_name),
+        afterColumns: finalColumns.rows.map(c => c.column_name),
+        totalColumnsBefore: currentColumns.rows.length,
+        totalColumnsAfter: finalColumns.rows.length
+      }
     });
 
   } catch (error) {
