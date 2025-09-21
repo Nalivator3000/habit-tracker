@@ -175,7 +175,7 @@
                 <label>Admin Name</label>
                 <input type="text" id="adminName" value="Root Admin" placeholder="Enter admin name">
             </div>
-            <button class="btn" onclick="createAdmin()">Create Admin User</button>
+            <button class="btn" id="createAdminBtn">Create Admin User</button>
         </div>
 
         <div id="result"></div>
@@ -188,6 +188,11 @@
     </div>
 
     <script>
+        // Setup event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('createAdminBtn').addEventListener('click', createAdmin);
+        });
+
         async function createAdmin() {
             const email = document.getElementById('adminEmail').value;
             const password = document.getElementById('adminPassword').value;

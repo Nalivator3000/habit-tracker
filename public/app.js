@@ -395,13 +395,13 @@ class HabitTrackerApp {
                     </div>
                 </div>
                 <div class="habit-actions">
-                    <button class="btn btn-small" onclick="app.logHabit(${habit.id})">
+                    <button class="btn btn-small" data-action="complete-habit" data-habit-id="${habit.id}">
                         ✅ Complete
                     </button>
-                    <button class="btn btn-secondary btn-small" onclick="app.openHabitModal(${JSON.stringify(habit).replace(/"/g, '&quot;')})">
+                    <button class="btn btn-secondary btn-small" data-action="edit-habit" data-habit='${JSON.stringify(habit).replace(/'/g, "&#39;")}'>
                         ✏️ Edit
                     </button>
-                    <button class="btn btn-danger btn-small" onclick="app.deleteHabit(${habit.id})">
+                    <button class="btn btn-danger btn-small" data-action="delete-habit" data-habit-id="${habit.id}">
                         🗑️ Delete
                     </button>
                 </div>
@@ -443,10 +443,10 @@ class HabitTrackerApp {
                     </div>
                     <div class="habit-actions">
                         ${!completed ? `
-                            <button class="btn btn-small" onclick="app.logHabit(${habit.id})">
+                            <button class="btn btn-small" data-action="complete-habit" data-habit-id="${habit.id}">
                                 ✅ Complete
                             </button>
-                            <button class="btn btn-secondary btn-small" onclick="app.logHabit(${habit.id}, 'skipped')">
+                            <button class="btn btn-secondary btn-small" data-action="skip-habit" data-habit-id="${habit.id}">
                                 ⏭️ Skip
                             </button>
                         ` : `
@@ -503,10 +503,57 @@ class HabitTrackerApp {
 // Initialize the app
 const app = new HabitTrackerApp();
 
-// Global functions for HTML onclick handlers
+// Setup global event handlers for dynamic content
 window.app = app;
-window.showLogin = () => app.showLogin();
-window.showRegister = () => app.showRegister();
-window.logout = () => app.logout();
-window.openHabitModal = (habit) => app.openHabitModal(habit);
-window.closeHabitModal = () => app.closeHabitModal();
+
+// Add event delegation for dynamically created buttons
+document.addEventListener('click', function(e) {
+    // Handle habit completion buttons
+    if (e.target.matches('button[data-action="complete-habit"]')) {
+        const habitId = parseInt(e.target.dataset.habitId);
+        app.logHabit(habitId);
+    }
+
+    // Handle habit skip buttons
+    if (e.target.matches('button[data-action="skip-habit"]')) {
+        const habitId = parseInt(e.target.dataset.habitId);
+        app.logHabit(habitId, 'skipped');
+    }
+
+    // Handle habit edit buttons
+    if (e.target.matches('button[data-action="edit-habit"]')) {
+        const habitData = JSON.parse(e.target.dataset.habit);
+        app.openHabitModal(habitData);
+    }
+
+    // Handle habit delete buttons
+    if (e.target.matches('button[data-action="delete-habit"]')) {
+        const habitId = parseInt(e.target.dataset.habitId);
+        app.deleteHabit(habitId);
+    }
+
+    // Handle logout button
+    if (e.target.matches('button[data-action="logout"]')) {
+        app.logout();
+    }
+
+    // Handle show login button
+    if (e.target.matches('button[data-action="show-login"]')) {
+        app.showLogin();
+    }
+
+    // Handle show register button
+    if (e.target.matches('button[data-action="show-register"]')) {
+        app.showRegister();
+    }
+
+    // Handle add habit button
+    if (e.target.matches('button[data-action="add-habit"]')) {
+        app.openHabitModal();
+    }
+
+    // Handle close modal button
+    if (e.target.matches('button[data-action="close-modal"]')) {
+        app.closeHabitModal();
+    }
+});
