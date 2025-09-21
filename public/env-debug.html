@@ -60,6 +60,7 @@
             <button onclick="testDatabaseTables()">Test Database Tables</button>
             <button onclick="testDatabaseQueries()">Test Database Queries</button>
             <button onclick="initializeDatabase()">Initialize Database</button>
+            <button onclick="setupRootUser()">Setup Root User</button>
             <button onclick="runAllDatabaseTests()">Run All DB Tests</button>
             <div id="dbResults"></div>
         </div>
@@ -239,6 +240,46 @@
             await testAdminEndpoint();
 
             log('dbResults', '🎉 All database tests completed!', 'success');
+        }
+
+        async function setupRootUser() {
+            log('dbResults', 'Setting up root user (clearing all users)...', 'info');
+            try {
+                const response = await fetch('/api/admin/setup-root', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    log('dbResults', `✅ Root User Setup: ${JSON.stringify(data, null, 2)}`, 'success');
+
+                    // Test login immediately
+                    log('dbResults', 'Testing root login...', 'info');
+                    try {
+                        const loginResponse = await fetch('/api/auth/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ email: 'root', password: 'root' })
+                        });
+
+                        const loginData = await loginResponse.json();
+                        log('dbResults', `Root Login Status: ${loginResponse.status}`, 'info');
+                        log('dbResults', `Root Login Data: ${JSON.stringify(loginData, null, 2)}`, loginResponse.ok ? 'success' : 'error');
+                    } catch (loginError) {
+                        log('dbResults', `❌ Root Login Failed: ${loginError.message}`, 'error');
+                    }
+                } else {
+                    log('dbResults', `❌ Root Setup Error: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log('dbResults', `❌ Root Setup Failed: ${error.message}`, 'error');
+            }
         }
 
         async function createAdmin() {

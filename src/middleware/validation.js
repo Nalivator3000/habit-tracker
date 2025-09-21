@@ -44,12 +44,11 @@ const validateRegistration = [
   handleValidationErrors,
 ];
 
-// User login validation
+// User login validation (simplified for root user)
 const validateLogin = [
   body('email')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Please provide a valid email address'),
+    .notEmpty()
+    .withMessage('Email/username is required'),
 
   body('password')
     .notEmpty()

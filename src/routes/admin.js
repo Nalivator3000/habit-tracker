@@ -365,4 +365,46 @@ router.get('/test-env', async (req, res) => {
   }
 });
 
+// Clear users and create root user
+router.post('/setup-root', async (req, res) => {
+  try {
+    console.log('🗑️ Clearing users table and creating root user...');
+
+    // Clear all users
+    await query('DELETE FROM users');
+    console.log('✅ All users deleted');
+
+    // Create root user with simple credentials
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash('root', 12);
+
+    const result = await query(
+      `INSERT INTO users (email, password_hash, name, timezone, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+       RETURNING id, email, name, created_at`,
+      ['root', hashedPassword, 'Root User', 'UTC']
+    );
+
+    console.log('✅ Root user created:', result.rows[0]);
+
+    res.json({
+      success: true,
+      message: 'Root user setup completed',
+      user: result.rows[0],
+      credentials: {
+        email: 'root',
+        password: 'root'
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Root setup error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 module.exports = router;
