@@ -213,4 +213,98 @@ router.get('/test-queries', async (req, res) => {
   }
 });
 
+// Initialize database tables
+router.post('/init-database', async (req, res) => {
+  try {
+    console.log('🗃️ Initializing database tables...');
+
+    const { pool } = require('../config/database');
+
+    // Check if we can connect first
+    const connectionTest = await pool.query('SELECT NOW() as test_time');
+    console.log('✅ Database connection successful:', connectionTest.rows[0]);
+
+    // Create tables using the schema
+    const createTablesSQL = `
+      -- Users table
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        telegram_id BIGINT UNIQUE,
+        timezone VARCHAR(50) DEFAULT 'UTC',
+        preferences JSONB DEFAULT '{}',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      -- Habits table
+      CREATE TABLE IF NOT EXISTS habits (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        frequency_type VARCHAR(20) NOT NULL DEFAULT 'daily',
+        frequency_value INTEGER DEFAULT 1,
+        target_count INTEGER DEFAULT 1,
+        difficulty_level INTEGER DEFAULT 3 CHECK (difficulty_level BETWEEN 1 AND 5),
+        category VARCHAR(100),
+        color VARCHAR(7) DEFAULT '#3B82F6',
+        icon VARCHAR(50),
+        is_archived BOOLEAN DEFAULT FALSE,
+        streak_count INTEGER DEFAULT 0,
+        best_streak INTEGER DEFAULT 0,
+        total_completions INTEGER DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      -- Habit logs table
+      CREATE TABLE IF NOT EXISTS habit_logs (
+        id SERIAL PRIMARY KEY,
+        habit_id INTEGER REFERENCES habits(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        date DATE NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'completed',
+        completion_count INTEGER DEFAULT 1,
+        quality_rating INTEGER CHECK (quality_rating BETWEEN 1 AND 10),
+        mood_before INTEGER CHECK (mood_before BETWEEN 1 AND 10),
+        mood_after INTEGER CHECK (mood_after BETWEEN 1 AND 10),
+        notes TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(habit_id, date)
+      );
+    `;
+
+    await pool.query(createTablesSQL);
+
+    // Verify tables were created
+    const tablesResult = await pool.query(`
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+      ORDER BY table_name
+    `);
+
+    console.log('✅ Database initialization completed');
+
+    res.json({
+      success: true,
+      message: 'Database tables initialized successfully',
+      tablesCreated: tablesResult.rows.map(row => row.table_name),
+      connectionTest: connectionTest.rows[0]
+    });
+
+  } catch (error) {
+    console.error('❌ Database initialization error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      code: error.code,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 module.exports = router;

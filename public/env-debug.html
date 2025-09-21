@@ -58,6 +58,7 @@
             <button onclick="testAdminEndpoint()">Test Admin Endpoint</button>
             <button onclick="testDatabaseTables()">Test Database Tables</button>
             <button onclick="testDatabaseQueries()">Test Database Queries</button>
+            <button onclick="initializeDatabase()">Initialize Database</button>
             <button onclick="runAllDatabaseTests()">Run All DB Tests</button>
             <div id="dbResults"></div>
         </div>
@@ -166,6 +167,28 @@
                 }
             } catch (error) {
                 log('dbResults', `❌ Query Test Failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function initializeDatabase() {
+            log('dbResults', 'Initializing database tables...', 'info');
+            try {
+                const response = await fetch('/api/admin/init-database', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    log('dbResults', `✅ Database Initialized: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log('dbResults', `❌ Database Init Error: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log('dbResults', `❌ Database Init Failed: ${error.message}`, 'error');
             }
         }
 
