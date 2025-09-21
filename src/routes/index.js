@@ -19,6 +19,7 @@ router.get('/', (req, res) => {
 // Route modules
 router.use('/auth', require('./auth'));
 router.use('/habits', require('./habits'));
+router.use('/admin', require('./admin'));
 // router.use('/metrics', require('./metrics'));
 // router.use('/users', require('./users'));
 

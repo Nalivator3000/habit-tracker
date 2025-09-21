@@ -207,8 +207,8 @@
             showResult('<div class="spinner"></div>Creating admin user...', 'loading');
 
             try {
-                // First try to register the admin user
-                const response = await fetch('/api/auth/register', {
+                // Use dedicated admin creation endpoint
+                const response = await fetch('/api/admin/create-admin', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
