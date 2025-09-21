@@ -16,7 +16,7 @@ const config = {
 
   // JWT
   jwt: {
-    secret: process.env.JWT_SECRET || 'your-secret-key',
+    secret: process.env.JWT_SECRET || 'habit-tracker-fallback-secret-' + Date.now(),
     expiresIn: process.env.JWT_EXPIRES_IN || '24h',
   },
 
