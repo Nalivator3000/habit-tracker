@@ -32,35 +32,33 @@ class Habit {
     const {
       name,
       description,
-      category_id,
       color = '#3B82F6',
-      icon,
-      frequency_type,
-      frequency_value = 1,
+      frequency_type = 'daily',
       target_count = 1,
-      reminder_times,
-      preferred_time_start,
-      preferred_time_end,
-      notes,
-      difficulty_level,
-      is_public = false,
+      difficulty_level = 3,
+      category = null // Handle category as string for now
     } = habitData;
 
+    console.log('🎯 Creating habit with data:', {
+      userId, name, description, color, frequency_type, target_count, difficulty_level, category
+    });
+
+    // For now, ignore category_id and use simplified structure
     const result = await query(
       `INSERT INTO habits (
-        user_id, name, description, category_id, color, icon,
-        frequency_type, frequency_value, target_count,
-        reminder_times, preferred_time_start, preferred_time_end,
-        notes, difficulty_level, is_public
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        user_id, name, description, color,
+        frequency_type, target_count, difficulty_level,
+        is_active, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
       RETURNING *`,
       [
-        userId, name, description, category_id, color, icon,
-        frequency_type, frequency_value, target_count,
-        reminder_times, preferred_time_start, preferred_time_end,
-        notes, difficulty_level, is_public
+        userId, name, description, color,
+        frequency_type, target_count, difficulty_level,
+        true
       ]
     );
+
+    console.log('✅ Habit inserted, result:', result.rows[0]);
 
     return new Habit(result.rows[0]);
   }

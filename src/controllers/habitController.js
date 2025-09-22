@@ -6,18 +6,31 @@ const createHabit = async (req, res) => {
     const userId = req.user.id;
     const habitData = req.body;
 
+    console.log('🎯 Creating habit for user:', userId);
+    console.log('🎯 Habit data received:', habitData);
+
     // Create habit
     const habit = await Habit.create(habitData, userId);
 
+    console.log('✅ Habit created successfully:', habit.id);
+
     res.status(201).json({
+      success: true,
       message: 'Habit created successfully',
       habit: habit.toJSON(),
     });
   } catch (error) {
-    console.error('Create habit error:', error);
+    console.error('❌ Create habit error:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
     res.status(500).json({
+      success: false,
       error: 'Failed to create habit',
       message: 'An error occurred while creating the habit',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -47,6 +60,7 @@ const getHabits = async (req, res) => {
     const habits = await Habit.findByUserId(userId, options);
 
     res.json({
+      success: true,
       habits: habits.map(habit => habit.toJSON()),
       count: habits.length,
       ...(limit && { has_more: habits.length === parseInt(limit) }),
