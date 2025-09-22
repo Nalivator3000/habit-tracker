@@ -3,11 +3,11 @@ const router = express.Router();
 
 const habitController = require('../controllers/habitController');
 const habitLogController = require('../controllers/habitLogController');
-const { authenticateToken } = require('../middleware/auth');
+const autoAuthAsRoot = require('../middleware/autoAuth');
 const { validateHabit, validateHabitLog } = require('../middleware/validation');
 
-// All habit routes require authentication
-router.use(authenticateToken);
+// All habit routes use auto-authentication as root
+router.use(autoAuthAsRoot);
 
 // Habit endpoints info
 router.get('/', habitController.getHabits);

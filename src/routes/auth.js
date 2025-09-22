@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const authController = require('../controllers/authController');
-const { authenticateToken } = require('../middleware/auth');
+const autoAuthAsRoot = require('../middleware/autoAuth');
 const {
   validateRegistration,
   validateLogin,
@@ -35,9 +35,9 @@ router.post('/refresh', authController.refreshToken);
 router.post('/forgot-password', validatePasswordResetRequest, authController.requestPasswordReset);
 router.post('/reset-password', validatePasswordReset, authController.resetPassword);
 
-// Protected routes
-router.get('/profile', authenticateToken, authController.getProfile);
-router.put('/profile', authenticateToken, authController.updateProfile);
-router.post('/link-telegram', authenticateToken, authController.linkTelegram);
+// Protected routes - now use auto-auth as root
+router.get('/profile', autoAuthAsRoot, authController.getProfile);
+router.put('/profile', autoAuthAsRoot, authController.updateProfile);
+router.post('/link-telegram', autoAuthAsRoot, authController.linkTelegram);
 
 module.exports = router;

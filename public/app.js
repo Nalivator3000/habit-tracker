@@ -65,39 +65,14 @@ class HabitTrackerApp {
 
     async loadHabits() {
         try {
-            // For now, load from localStorage or use demo data
-            const savedHabits = localStorage.getItem('demo_habits');
-            if (savedHabits) {
-                this.habits = JSON.parse(savedHabits);
+            const response = await this.fetchAPI('/habits');
+
+            if (response.success) {
+                this.habits = response.habits;
+                this.renderHabits();
             } else {
-                // Demo habits for testing
-                this.habits = [
-                    {
-                        id: 1,
-                        name: 'Morning Exercise',
-                        description: 'Daily morning workout',
-                        frequency: 'daily',
-                        target_count: 1,
-                        difficulty: 3,
-                        category: 'health',
-                        color: '#10B981',
-                        created_at: new Date().toISOString()
-                    },
-                    {
-                        id: 2,
-                        name: 'Read Books',
-                        description: 'Read for 30 minutes',
-                        frequency: 'daily',
-                        target_count: 1,
-                        difficulty: 2,
-                        category: 'education',
-                        color: '#3B82F6',
-                        created_at: new Date().toISOString()
-                    }
-                ];
-                localStorage.setItem('demo_habits', JSON.stringify(this.habits));
+                this.showMessage('habitsList', 'Failed to load habits', 'error');
             }
-            this.renderHabits();
         } catch (error) {
             console.error('Failed to load habits:', error);
             this.showMessage('habitsList', 'Failed to load habits', 'error');
@@ -106,70 +81,69 @@ class HabitTrackerApp {
 
     async loadTodayHabits() {
         try {
-            // Simulate today's habit completion status
-            const todayLogs = this.habits.map(habit => ({
-                habit_id: habit.id,
-                habit_name: habit.name,
-                completed: Math.random() > 0.5, // Random completion for demo
-                color: habit.color
-            }));
-            this.renderTodayHabits(todayLogs);
+            const response = await this.fetchAPI('/habits/logs/today');
+
+            if (response.success) {
+                this.renderTodayHabits(response.logs);
+            }
         } catch (error) {
             console.error('Failed to load today habits:', error);
         }
     }
 
     async loadStats() {
-        // Calculate stats from habits data
-        const totalHabits = this.habits.length;
-        const activeStreaks = Math.floor(Math.random() * totalHabits); // Random for demo
-        const completedToday = Math.floor(Math.random() * totalHabits); // Random for demo
-        const completionRate = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
+        try {
+            // Get today's logs for completion rate
+            const response = await this.fetchAPI('/habits/logs/today');
 
-        this.renderStats({
-            totalHabits,
-            completedToday,
-            activeStreaks,
-            completionRate
-        });
+            const totalHabits = this.habits.length;
+            const activeStreaks = this.habits.filter(h => h.streak_count > 0).length;
+            const completedToday = response.success ? response.logs.filter(l => l.status === 'completed').length : 0;
+            const completionRate = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
+
+            this.renderStats({
+                totalHabits,
+                completedToday,
+                activeStreaks,
+                completionRate
+            });
+        } catch (error) {
+            console.error('Failed to load stats:', error);
+        }
     }
 
     // Habit management
     async saveHabit() {
         const habitData = {
-            id: this.editingHabit ? this.editingHabit.id : Date.now(), // Use timestamp as ID for new habits
             name: document.getElementById('habitName').value,
             description: document.getElementById('habitDescription').value,
-            frequency: document.getElementById('habitFrequency').value,
+            frequency_type: document.getElementById('habitFrequency').value,
             target_count: parseInt(document.getElementById('habitTarget').value),
-            difficulty: parseInt(document.getElementById('habitDifficulty').value),
+            difficulty_level: parseInt(document.getElementById('habitDifficulty').value),
             category: document.getElementById('habitCategory').value,
-            color: this.selectedColor,
-            created_at: this.editingHabit ? this.editingHabit.created_at : new Date().toISOString()
+            color: this.selectedColor
         };
 
         try {
             this.showMessage('habitModalMessage', 'Saving habit...', 'info');
 
-            if (this.editingHabit) {
-                // Update existing habit
-                const index = this.habits.findIndex(h => h.id === this.editingHabit.id);
-                if (index !== -1) {
-                    this.habits[index] = habitData;
-                }
+            const url = this.editingHabit ? `/habits/${this.editingHabit.id}` : '/habits';
+            const method = this.editingHabit ? 'PUT' : 'POST';
+
+            const response = await this.fetchAPI(url, {
+                method,
+                body: JSON.stringify(habitData)
+            });
+
+            if (response.success) {
+                this.showMessage('habitModalMessage', 'Habit saved successfully!', 'success');
+                setTimeout(() => {
+                    this.closeHabitModal();
+                    this.loadData();
+                }, 1000);
             } else {
-                // Add new habit
-                this.habits.push(habitData);
+                this.showMessage('habitModalMessage', response.message || 'Failed to save habit', 'error');
             }
-
-            // Save to localStorage
-            localStorage.setItem('demo_habits', JSON.stringify(this.habits));
-
-            this.showMessage('habitModalMessage', 'Habit saved successfully!', 'success');
-            setTimeout(() => {
-                this.closeHabitModal();
-                this.loadData();
-            }, 1000);
         } catch (error) {
             console.error('Save habit error:', error);
             this.showMessage('habitModalMessage', 'Failed to save habit. Please try again.', 'error');
@@ -180,13 +154,15 @@ class HabitTrackerApp {
         if (!confirm('Are you sure you want to delete this habit?')) return;
 
         try {
-            // Remove from habits array
-            this.habits = this.habits.filter(h => h.id !== habitId);
+            const response = await this.fetchAPI(`/habits/${habitId}`, {
+                method: 'DELETE'
+            });
 
-            // Save to localStorage
-            localStorage.setItem('demo_habits', JSON.stringify(this.habits));
-
-            this.loadData();
+            if (response.success) {
+                this.loadData();
+            } else {
+                alert('Failed to delete habit');
+            }
         } catch (error) {
             console.error('Delete habit error:', error);
             alert('Failed to delete habit');
@@ -195,11 +171,21 @@ class HabitTrackerApp {
 
     async logHabit(habitId, status = 'completed') {
         try {
-            // For demo mode, just show success message
-            const habit = this.habits.find(h => h.id === habitId);
-            if (habit) {
-                alert(`✅ Logged "${habit.name}" as ${status}!`);
-                this.loadData(); // Refresh data to show updated stats
+            const today = new Date().toISOString().split('T')[0];
+
+            const response = await this.fetchAPI(`/habits/${habitId}/log`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    date: today,
+                    status,
+                    completion_count: 1
+                })
+            });
+
+            if (response.success) {
+                this.loadData(); // Refresh all data
+            } else {
+                alert(response.message || 'Failed to log habit');
             }
         } catch (error) {
             console.error('Log habit error:', error);
