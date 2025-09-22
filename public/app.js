@@ -50,91 +50,9 @@ class HabitTrackerApp {
     }
 
     // Authentication
-    async checkAuth() {
-        try {
-            const response = await this.fetchAPI('/auth/profile', {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+    // Authentication functions removed for demo mode
 
-            if (response.success) {
-                this.user = response.user;
-                this.showApp();
-                this.loadData();
-            } else {
-                this.logout();
-            }
-        } catch (error) {
-            console.error('Auth check failed:', error);
-            this.logout();
-        }
-    }
-
-    async login() {
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-
-        try {
-            this.showMessage('authMessage', 'Logging in...', 'info');
-
-            const response = await this.fetchAPI('/auth/login', {
-                method: 'POST',
-                body: JSON.stringify({ email, password })
-            });
-
-            if (response.success) {
-                this.token = response.token;
-                this.user = response.user;
-                localStorage.setItem('habitTracker_token', this.token);
-                this.showApp();
-                this.loadData();
-                this.showMessage('authMessage', 'Login successful!', 'success');
-            } else {
-                this.showMessage('authMessage', response.message || 'Login failed', 'error');
-            }
-        } catch (error) {
-            console.error('Login error:', error);
-            this.showMessage('authMessage', 'Login failed. Please try again.', 'error');
-        }
-    }
-
-    async register() {
-        const name = document.getElementById('registerName').value;
-        const email = document.getElementById('registerEmail').value;
-        const password = document.getElementById('registerPassword').value;
-
-        try {
-            this.showMessage('authMessage', 'Creating account...', 'info');
-
-            const response = await this.fetchAPI('/auth/register', {
-                method: 'POST',
-                body: JSON.stringify({ name, email, password })
-            });
-
-            if (response.success) {
-                this.token = response.token;
-                this.user = response.user;
-                localStorage.setItem('habitTracker_token', this.token);
-                this.showApp();
-                this.loadData();
-                this.showMessage('authMessage', 'Account created successfully!', 'success');
-            } else {
-                this.showMessage('authMessage', response.message || 'Registration failed', 'error');
-            }
-        } catch (error) {
-            console.error('Registration error:', error);
-            this.showMessage('authMessage', 'Registration failed. Please try again.', 'error');
-        }
-    }
-
-    logout() {
-        this.token = null;
-        this.user = null;
-        this.habits = [];
-        localStorage.removeItem('habitTracker_token');
-        this.showAuth();
-    }
+    // Logout function removed for demo mode
 
     // Data loading
     async loadData() {
@@ -289,29 +207,17 @@ class HabitTrackerApp {
         }
     }
 
-    // UI Management
-    showAuth() {
-        document.getElementById('authSection').classList.remove('hidden');
-        document.getElementById('mainApp').classList.add('hidden');
-    }
+    // UI Management - simplified for demo mode
 
     showApp() {
-        document.getElementById('authSection').classList.add('hidden');
-        document.getElementById('mainApp').classList.remove('hidden');
-        document.getElementById('userEmail').textContent = this.user?.email || '';
+        // authSection no longer exists, just ensure mainApp is visible
+        const mainApp = document.getElementById('mainApp');
+        if (mainApp) {
+            mainApp.classList.remove('hidden');
+        }
     }
 
-    showLogin() {
-        document.getElementById('loginForm').classList.remove('hidden');
-        document.getElementById('registerForm').classList.add('hidden');
-        document.getElementById('authMessage').innerHTML = '';
-    }
-
-    showRegister() {
-        document.getElementById('loginForm').classList.add('hidden');
-        document.getElementById('registerForm').classList.remove('hidden');
-        document.getElementById('authMessage').innerHTML = '';
-    }
+    // showLogin and showRegister functions removed for demo mode
 
     openHabitModal(habit = null) {
         this.editingHabit = habit;
@@ -513,20 +419,7 @@ document.addEventListener('click', function(e) {
         app.deleteHabit(habitId);
     }
 
-    // Handle logout button
-    if (e.target.matches('button[data-action="logout"]')) {
-        app.logout();
-    }
-
-    // Handle show login button
-    if (e.target.matches('button[data-action="show-login"]')) {
-        app.showLogin();
-    }
-
-    // Handle show register button
-    if (e.target.matches('button[data-action="show-register"]')) {
-        app.showRegister();
-    }
+    // Authentication button handlers removed for demo mode
 
     // Handle add habit button
     if (e.target.matches('button[data-action="add-habit"]')) {
