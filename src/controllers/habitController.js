@@ -3,7 +3,8 @@ const Habit = require('../models/Habit');
 // Create a new habit
 const createHabit = async (req, res) => {
   try {
-    const userId = req.user.id;
+    // TEMPORARY: Use hardcoded root user ID for testing
+    const userId = 3; // Root user ID from database
     const habitData = req.body;
 
     console.log('🎯 Creating habit for user:', userId);
@@ -38,7 +39,12 @@ const createHabit = async (req, res) => {
 // Get all user habits
 const getHabits = async (req, res) => {
   try {
-    const userId = req.user.id;
+    console.log('📋 getHabits: Starting request');
+    console.log('📋 getHabits: req.user exists:', !!req.user);
+
+    // TEMPORARY: Use hardcoded root user ID for testing
+    const userId = 3; // Root user ID from database
+    console.log('📋 getHabits: Using userId:', userId);
     const {
       is_active = 'true',
       category_id,

@@ -85,6 +85,9 @@ class Habit {
 
   // Get all habits for a user
   static async findByUserId(userId, options = {}) {
+    console.log('🔍 Habit.findByUserId: Starting with userId:', userId);
+    console.log('🔍 Habit.findByUserId: Options:', options);
+
     const {
       is_active = true,
       category_id,
@@ -123,7 +126,14 @@ class Habit {
       params.push(limit, offset);
     }
 
+    console.log('🔍 Habit.findByUserId: SQL Query:', queryText);
+    console.log('🔍 Habit.findByUserId: SQL Params:', params);
+
     const result = await query(queryText, params);
+
+    console.log('🔍 Habit.findByUserId: Query result rows:', result.rows.length);
+    console.log('🔍 Habit.findByUserId: First row:', result.rows[0]);
+
     return result.rows.map(row => new Habit(row));
   }
 
