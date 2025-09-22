@@ -19,49 +19,44 @@ router.get('/test', (req, res) => {
   });
 });
 
-// Simple working habits endpoint without problematic model
+// Ultra-simple habits endpoint for emergency testing
 router.get('/', async (req, res) => {
-  console.log('🎯 HABITS: Simple endpoint hit');
+  console.log('🚨 EMERGENCY: Ultra-simple endpoint hit');
   try {
-    // Direct database query bypassing model
     const { query } = require('../config/database');
 
-    const result = await query(`
-      SELECT id, name, description, color, frequency_type, target_count,
-             difficulty_level, is_active, created_at, updated_at
-      FROM habits
-      WHERE user_id = $1 AND (is_active IS NULL OR is_active = true)
-      ORDER BY created_at DESC
-    `, [3]);
+    // Step 1: Test basic table access
+    console.log('🚨 EMERGENCY: Testing basic table access');
+    const basicTest = await query('SELECT COUNT(*) as count FROM habits');
+    console.log('🚨 EMERGENCY: Basic count result:', basicTest.rows);
 
-    console.log('🎯 HABITS: Found', result.rows.length, 'habits');
+    // Step 2: Test specific user query
+    console.log('🚨 EMERGENCY: Testing user-specific query');
+    const userTest = await query('SELECT COUNT(*) as count FROM habits WHERE user_id = 3');
+    console.log('🚨 EMERGENCY: User count result:', userTest.rows);
 
-    // Transform to expected format
-    const habits = result.rows.map(row => ({
-      id: row.id,
-      name: row.name,
-      description: row.description,
-      color: row.color,
-      frequency_type: row.frequency_type,
-      target_count: row.target_count,
-      difficulty_level: row.difficulty_level,
-      is_active: row.is_active,
-      created_at: row.created_at,
-      updated_at: row.updated_at
-    }));
+    // Step 3: Get actual data
+    console.log('🚨 EMERGENCY: Getting actual data');
+    const dataTest = await query('SELECT * FROM habits LIMIT 5');
+    console.log('🚨 EMERGENCY: Sample data:', dataTest.rows);
 
     res.json({
       success: true,
-      habits: habits,
-      count: habits.length
+      message: 'Emergency testing successful',
+      results: {
+        totalHabits: basicTest.rows[0].count,
+        userHabits: userTest.rows[0].count,
+        sampleData: dataTest.rows
+      }
     });
 
   } catch (error) {
-    console.error('🎯 HABITS: Error:', error);
+    console.error('🚨 EMERGENCY: Error:', error);
     res.status(500).json({
       success: false,
-      error: 'Database error',
-      message: error.message
+      error: 'Emergency test failed',
+      message: error.message,
+      stack: error.stack
     });
   }
 });
