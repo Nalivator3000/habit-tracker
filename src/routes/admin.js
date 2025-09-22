@@ -677,4 +677,67 @@ router.post('/fix-habits-table', async (req, res) => {
   }
 });
 
+// Emergency habits table recreation
+router.post('/emergency-habits-fix', async (req, res) => {
+  try {
+    console.log('🚨 EMERGENCY: Recreating habits table');
+
+    // Drop and recreate habits table
+    await query('DROP TABLE IF EXISTS habits CASCADE');
+    console.log('🚨 EMERGENCY: Dropped old habits table');
+
+    const createSQL = `
+      CREATE TABLE habits (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        color VARCHAR(7) DEFAULT '#3B82F6',
+        frequency_type VARCHAR(50) DEFAULT 'daily',
+        target_count INTEGER DEFAULT 1,
+        difficulty_level INTEGER DEFAULT 3,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+
+    await query(createSQL);
+    console.log('🚨 EMERGENCY: Created new habits table');
+
+    // Add some test data
+    const testHabits = [
+      ['Morning Exercise', 'Daily morning workout', '#10B981', 'daily', 1, 3],
+      ['Read Books', 'Read for 30 minutes', '#3B82F6', 'daily', 1, 2],
+      ['Drink Water', 'Stay hydrated', '#F59E0B', 'daily', 8, 1]
+    ];
+
+    for (const [name, desc, color, freq, target, diff] of testHabits) {
+      await query(
+        'INSERT INTO habits (user_id, name, description, color, frequency_type, target_count, difficulty_level) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+        [3, name, desc, color, freq, target, diff]
+      );
+    }
+
+    console.log('🚨 EMERGENCY: Added test habits');
+
+    // Verify
+    const result = await query('SELECT COUNT(*) as count FROM habits');
+
+    res.json({
+      success: true,
+      message: 'Emergency habits table fix completed',
+      habitsCount: result.rows[0].count
+    });
+
+  } catch (error) {
+    console.error('🚨 EMERGENCY: Fix failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 module.exports = router;
