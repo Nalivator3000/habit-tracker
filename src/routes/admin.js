@@ -614,4 +614,67 @@ router.post('/fix-schema', async (req, res) => {
   }
 });
 
+// Fix habits table structure
+router.post('/fix-habits-table', async (req, res) => {
+  try {
+    console.log('🔧 Fixing habits table structure...');
+
+    // First check if habits table exists and get its structure
+    const tableCheck = await query(`
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns
+      WHERE table_name = 'habits'
+      ORDER BY ordinal_position
+    `);
+
+    console.log('📋 Current habits table structure:', tableCheck.rows);
+
+    // Create or recreate habits table with proper structure
+    const createTableSQL = `
+      CREATE TABLE IF NOT EXISTS habits (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        color VARCHAR(7) DEFAULT '#3B82F6',
+        frequency_type VARCHAR(50) DEFAULT 'daily',
+        target_count INTEGER DEFAULT 1,
+        difficulty_level INTEGER DEFAULT 3,
+        is_active BOOLEAN DEFAULT true,
+        streak_count INTEGER DEFAULT 0,
+        best_streak INTEGER DEFAULT 0,
+        total_completions INTEGER DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+
+    await query(createTableSQL);
+    console.log('✅ Habits table created/updated');
+
+    // Check final structure
+    const finalCheck = await query(`
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns
+      WHERE table_name = 'habits'
+      ORDER BY ordinal_position
+    `);
+
+    res.json({
+      success: true,
+      message: 'Habits table structure fixed',
+      beforeStructure: tableCheck.rows,
+      afterStructure: finalCheck.rows
+    });
+
+  } catch (error) {
+    console.error('❌ Fix habits table error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 module.exports = router;
