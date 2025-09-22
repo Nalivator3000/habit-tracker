@@ -335,53 +335,12 @@
                 🎯 <span>Habit Tracker</span>
             </div>
             <div class="user-info">
-                <span id="userEmail"></span>
-                <button class="btn btn-secondary btn-small" data-action="logout">Logout</button>
+                <span>Welcome, Root User</span>
             </div>
         </header>
 
-        <!-- Auth Section -->
-        <div id="authSection" class="card auth-form">
-            <h2>🔐 Welcome to Habit Tracker</h2>
-
-            <div id="authTabs" style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-                <button class="btn btn-secondary" data-action="show-login">Login</button>
-                <button class="btn" data-action="show-register">Register</button>
-            </div>
-
-            <form id="loginForm">
-                <div class="form-group">
-                    <label>Username / Email</label>
-                    <input type="text" id="loginEmail" required placeholder="Username or Email">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="loginPassword" required>
-                </div>
-                <button type="submit" class="btn" style="width: 100%;">Login</button>
-            </form>
-
-            <form id="registerForm" class="hidden">
-                <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" id="registerName" required>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="registerEmail" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="registerPassword" required>
-                </div>
-                <button type="submit" class="btn" style="width: 100%;">Register</button>
-            </form>
-
-            <div id="authMessage"></div>
-        </div>
-
         <!-- Main App -->
-        <div id="mainApp" class="hidden">
+        <div id="mainApp">
             <div class="main-content">
                 <!-- Dashboard -->
                 <div class="card">
