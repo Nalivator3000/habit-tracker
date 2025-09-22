@@ -20,16 +20,45 @@ router.get('/test', (req, res) => {
 });
 
 // Habit endpoints info
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   console.log('🧪 HABITS: Main habits endpoint hit');
   try {
-    habitController.getHabits(req, res);
+    console.log('🧪 HABITS: About to call controller');
+
+    // Test database connection first
+    const { query } = require('../config/database');
+    console.log('🧪 HABITS: Testing direct database query');
+    const testResult = await query('SELECT COUNT(*) as count FROM habits WHERE user_id = $1', [3]);
+    console.log('🧪 HABITS: Direct query result:', testResult.rows);
+
+    // Try to import Habit model
+    console.log('🧪 HABITS: Importing Habit model');
+    const Habit = require('../models/Habit');
+    console.log('🧪 HABITS: Habit model imported successfully');
+
+    // Try simple model call
+    console.log('🧪 HABITS: Calling Habit.findByUserId');
+    const habits = await Habit.findByUserId(3);
+    console.log('🧪 HABITS: Model call successful, habits count:', habits.length);
+
+    res.json({
+      success: true,
+      habits: habits.map(h => h.toJSON ? h.toJSON() : h),
+      count: habits.length,
+      debugInfo: {
+        directQueryCount: testResult.rows[0].count,
+        modelResultCount: habits.length
+      }
+    });
+
   } catch (error) {
-    console.error('🧪 HABITS: Controller error:', error);
+    console.error('🧪 HABITS: Detailed error:', error);
     res.status(500).json({
-      error: 'Controller error',
+      error: 'Detailed controller error',
       message: error.message,
-      stack: error.stack
+      stack: error.stack,
+      code: error.code,
+      name: error.name
     });
   }
 });
