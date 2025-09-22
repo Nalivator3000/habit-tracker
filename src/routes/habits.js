@@ -9,8 +9,30 @@ const { validateHabit, validateHabitLog } = require('../middleware/validation');
 // All habit routes require authentication - TEMPORARILY DISABLED FOR TESTING
 // router.use(authenticateToken);
 
+// Test endpoint for debugging
+router.get('/test', (req, res) => {
+  console.log('🧪 TEST: Simple test endpoint hit');
+  res.json({
+    success: true,
+    message: 'Test endpoint works!',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Habit endpoints info
-router.get('/', habitController.getHabits);
+router.get('/', (req, res) => {
+  console.log('🧪 HABITS: Main habits endpoint hit');
+  try {
+    habitController.getHabits(req, res);
+  } catch (error) {
+    console.error('🧪 HABITS: Controller error:', error);
+    res.status(500).json({
+      error: 'Controller error',
+      message: error.message,
+      stack: error.stack
+    });
+  }
+});
 
 // Habit CRUD operations
 router.post('/', validateHabit, habitController.createHabit);
