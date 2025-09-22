@@ -72,8 +72,20 @@ Status: Production Ready
             <button onclick="initializeDatabase()">Initialize Database</button>
             <button onclick="fixDatabaseSchema()">Fix Database Schema</button>
             <button onclick="setupRootUser()">Setup Root User</button>
+            <button onclick="fixHabitsTable()">Fix Habits Table</button>
             <button onclick="runAllDatabaseTests()">Run All DB Tests</button>
             <div id="dbResults"></div>
+        </div>
+
+        <div class="section">
+            <h2>Habit Tracker Testing</h2>
+            <button onclick="testAutoAuth()">Test Auto Authentication</button>
+            <button onclick="testUserProfile()">Test User Profile</button>
+            <button onclick="testGetHabits()">Test Get Habits</button>
+            <button onclick="testCreateHabit()">Test Create Habit</button>
+            <button onclick="testCompleteHabitWorkflow()">Test Complete Workflow</button>
+            <button onclick="runAllHabitTests()">Run All Habit Tests</button>
+            <div id="habitResults"></div>
         </div>
 
         <div class="section">
@@ -441,6 +453,164 @@ Status: Production Ready
             } catch (error) {
                 log('adminResults', `❌ Admin Creation Failed: ${error.message}`, 'error');
             }
+        }
+
+        // Fix habits table structure
+        async function fixHabitsTable() {
+            log('dbResults', 'Fixing habits table structure...', 'info');
+            try {
+                const response = await fetch('/api/admin/fix-habits-table', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    log('dbResults', `✅ Habits Table Fixed: ${data.message}`, 'success');
+                    log('dbResults', `📊 Before: ${data.beforeStructure.length} columns`, 'info');
+                    log('dbResults', `📊 After: ${data.afterStructure.length} columns`, 'info');
+                } else {
+                    log('dbResults', `❌ Habits Table Fix Error: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log('dbResults', `❌ Habits Table Fix Failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test Auto Authentication
+        async function testAutoAuth() {
+            log('habitResults', 'Testing auto authentication...', 'info');
+            try {
+                const response = await fetch('/api/auth/profile');
+                const data = await response.json();
+
+                if (response.ok && data.user) {
+                    log('habitResults', `✅ Auto Auth Success: User ${data.user.email} (ID: ${data.user.id})`, 'success');
+                    log('habitResults', `👤 User Details: ${JSON.stringify(data.user, null, 2)}`, 'info');
+                } else {
+                    log('habitResults', `❌ Auto Auth Failed: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log('habitResults', `❌ Auto Auth Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test User Profile
+        async function testUserProfile() {
+            log('habitResults', 'Testing user profile endpoint...', 'info');
+            try {
+                const response = await fetch('/api/auth/profile');
+                const data = await response.json();
+
+                log('habitResults', `Profile Response Status: ${response.status}`, 'info');
+                log('habitResults', `Profile Data: ${JSON.stringify(data, null, 2)}`, response.ok ? 'success' : 'error');
+            } catch (error) {
+                log('habitResults', `❌ Profile Test Failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test Get Habits
+        async function testGetHabits() {
+            log('habitResults', 'Testing get habits endpoint...', 'info');
+            try {
+                const response = await fetch('/api/habits');
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    log('habitResults', `✅ Get Habits Success: Found ${data.habits.length} habits`, 'success');
+                    if (data.habits.length > 0) {
+                        log('habitResults', `📋 Habits: ${JSON.stringify(data.habits, null, 2)}`, 'info');
+                    } else {
+                        log('habitResults', `📋 No habits found - database is empty`, 'warning');
+                    }
+                } else {
+                    log('habitResults', `❌ Get Habits Failed: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log('habitResults', `❌ Get Habits Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test Create Habit
+        async function testCreateHabit() {
+            log('habitResults', 'Testing create habit endpoint...', 'info');
+            try {
+                const testHabit = {
+                    name: 'Test Habit ' + new Date().getTime(),
+                    description: 'Автоматически созданная тестовая привычка',
+                    frequency_type: 'daily',
+                    target_count: 1,
+                    difficulty_level: 3,
+                    color: '#10B981'
+                };
+
+                log('habitResults', `📝 Creating habit: ${JSON.stringify(testHabit, null, 2)}`, 'info');
+
+                const response = await fetch('/api/habits', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testHabit)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    log('habitResults', `✅ Create Habit Success: Created habit with ID ${data.habit.id}`, 'success');
+                    log('habitResults', `🎯 Created Habit: ${JSON.stringify(data.habit, null, 2)}`, 'success');
+                } else {
+                    log('habitResults', `❌ Create Habit Failed: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log('habitResults', `❌ Create Habit Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test Complete Habit Workflow
+        async function testCompleteHabitWorkflow() {
+            log('habitResults', '🔄 Running complete habit workflow test...', 'info');
+            document.getElementById('habitResults').innerHTML = '';
+
+            // Step 1: Test Auth
+            log('habitResults', '1️⃣ Testing authentication...', 'info');
+            await testAutoAuth();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Step 2: Get initial habits
+            log('habitResults', '2️⃣ Getting initial habits...', 'info');
+            await testGetHabits();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Step 3: Create new habit
+            log('habitResults', '3️⃣ Creating new habit...', 'info');
+            await testCreateHabit();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Step 4: Get habits again
+            log('habitResults', '4️⃣ Getting habits after creation...', 'info');
+            await testGetHabits();
+
+            log('habitResults', '🎉 Complete workflow test finished!', 'success');
+        }
+
+        // Run All Habit Tests
+        async function runAllHabitTests() {
+            log('habitResults', '🚀 Running all habit tests...', 'info');
+            document.getElementById('habitResults').innerHTML = '';
+
+            await testAutoAuth();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testUserProfile();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testGetHabits();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testCreateHabit();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            log('habitResults', '🎉 All habit tests completed!', 'success');
         }
 
         // Auto-run tests on load
