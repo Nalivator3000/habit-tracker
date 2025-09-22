@@ -19,52 +19,102 @@ router.get('/test', (req, res) => {
   });
 });
 
-// Habit endpoints info
+// Simple working habits endpoint without problematic model
 router.get('/', async (req, res) => {
-  console.log('🧪 HABITS: Main habits endpoint hit');
+  console.log('🎯 HABITS: Simple endpoint hit');
   try {
-    console.log('🧪 HABITS: About to call controller');
-
-    // Test database connection first
+    // Direct database query bypassing model
     const { query } = require('../config/database');
-    console.log('🧪 HABITS: Testing direct database query');
-    const testResult = await query('SELECT COUNT(*) as count FROM habits WHERE user_id = $1', [3]);
-    console.log('🧪 HABITS: Direct query result:', testResult.rows);
 
-    // Try to import Habit model
-    console.log('🧪 HABITS: Importing Habit model');
-    const Habit = require('../models/Habit');
-    console.log('🧪 HABITS: Habit model imported successfully');
+    const result = await query(`
+      SELECT id, name, description, color, frequency_type, target_count,
+             difficulty_level, is_active, created_at, updated_at
+      FROM habits
+      WHERE user_id = $1 AND (is_active IS NULL OR is_active = true)
+      ORDER BY created_at DESC
+    `, [3]);
 
-    // Try simple model call
-    console.log('🧪 HABITS: Calling Habit.findByUserId');
-    const habits = await Habit.findByUserId(3);
-    console.log('🧪 HABITS: Model call successful, habits count:', habits.length);
+    console.log('🎯 HABITS: Found', result.rows.length, 'habits');
+
+    // Transform to expected format
+    const habits = result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      color: row.color,
+      frequency_type: row.frequency_type,
+      target_count: row.target_count,
+      difficulty_level: row.difficulty_level,
+      is_active: row.is_active,
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    }));
 
     res.json({
       success: true,
-      habits: habits.map(h => h.toJSON ? h.toJSON() : h),
-      count: habits.length,
-      debugInfo: {
-        directQueryCount: testResult.rows[0].count,
-        modelResultCount: habits.length
-      }
+      habits: habits,
+      count: habits.length
     });
 
   } catch (error) {
-    console.error('🧪 HABITS: Detailed error:', error);
+    console.error('🎯 HABITS: Error:', error);
     res.status(500).json({
-      error: 'Detailed controller error',
-      message: error.message,
-      stack: error.stack,
-      code: error.code,
-      name: error.name
+      success: false,
+      error: 'Database error',
+      message: error.message
     });
   }
 });
 
-// Habit CRUD operations
-router.post('/', validateHabit, habitController.createHabit);
+// Simple working create habit endpoint without problematic model
+router.post('/', async (req, res) => {
+  console.log('🎯 CREATE: Create habit endpoint hit');
+  try {
+    const { name, description, frequency_type, target_count, difficulty_level, color, category } = req.body;
+    const { query } = require('../config/database');
+
+    console.log('🎯 CREATE: Creating habit:', { name, frequency_type, target_count });
+
+    const result = await query(`
+      INSERT INTO habits (
+        user_id, name, description, color, frequency_type,
+        target_count, difficulty_level, is_active, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+      RETURNING *
+    `, [3, name, description, color || '#3B82F6', frequency_type || 'daily', target_count || 1, difficulty_level || 3, true]);
+
+    const habit = result.rows[0];
+    console.log('🎯 CREATE: Habit created with ID:', habit.id);
+
+    res.status(201).json({
+      success: true,
+      message: 'Habit created successfully',
+      habit: {
+        id: habit.id,
+        name: habit.name,
+        description: habit.description,
+        color: habit.color,
+        frequency_type: habit.frequency_type,
+        target_count: habit.target_count,
+        difficulty_level: habit.difficulty_level,
+        is_active: habit.is_active,
+        created_at: habit.created_at,
+        updated_at: habit.updated_at
+      }
+    });
+
+  } catch (error) {
+    console.error('🎯 CREATE: Error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create habit',
+      message: error.message
+    });
+  }
+});
+
+// OLD: Habit CRUD operations
+// router.post('/', validateHabit, habitController.createHabit);
 router.get('/overview', habitController.getHabitOverview);
 router.get('/:id', habitController.getHabit);
 router.put('/:id', validateHabit, habitController.updateHabit);
