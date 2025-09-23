@@ -447,6 +447,34 @@
         </div>
     </div>
 
+    <script>
+        // Debug test for API connectivity
+        console.log('🔍 DEBUG: Testing API connectivity...');
+
+        fetch('/api/habits')
+            .then(response => {
+                console.log('🔍 DEBUG: /api/habits response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('🔍 DEBUG: /api/habits response data:', data);
+            })
+            .catch(error => {
+                console.error('🔍 DEBUG: /api/habits error:', error);
+            });
+
+        fetch('/api/habits/logs/today')
+            .then(response => {
+                console.log('🔍 DEBUG: /api/habits/logs/today response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('🔍 DEBUG: /api/habits/logs/today response data:', data);
+            })
+            .catch(error => {
+                console.error('🔍 DEBUG: /api/habits/logs/today error:', error);
+            });
+    </script>
     <script src="app.js"></script>
 </body>
 </html>
