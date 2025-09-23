@@ -65,16 +65,22 @@ class HabitTrackerApp {
 
     async loadHabits() {
         try {
+            console.log('🔍 loadHabits: Starting...');
             const response = await this.fetchAPI('/habits');
+            console.log('🔍 loadHabits: Response received:', response);
 
             if (response.success) {
+                console.log('🔍 loadHabits: Success! Setting habits:', response.habits);
                 this.habits = response.habits;
+                console.log('🔍 loadHabits: Calling renderHabits...');
                 this.renderHabits();
+                console.log('🔍 loadHabits: renderHabits completed');
             } else {
+                console.log('🔍 loadHabits: Response not successful:', response);
                 this.showMessage('habitsList', 'Failed to load habits', 'error');
             }
         } catch (error) {
-            console.error('Failed to load habits:', error);
+            console.error('🔍 loadHabits: ERROR:', error);
             this.showMessage('habitsList', 'Failed to load habits', 'error');
         }
     }
@@ -245,9 +251,12 @@ class HabitTrackerApp {
 
     // Rendering
     renderHabits() {
+        console.log('🔍 renderHabits: Starting with habits:', this.habits);
         const container = document.getElementById('habitsList');
+        console.log('🔍 renderHabits: Container found:', container);
 
         if (this.habits.length === 0) {
+            console.log('🔍 renderHabits: No habits, showing empty message');
             container.innerHTML = `
                 <div style="text-align: center; padding: 2rem; color: #666;">
                     <p>No habits yet. Create your first habit to get started!</p>
@@ -255,6 +264,8 @@ class HabitTrackerApp {
             `;
             return;
         }
+
+        console.log('🔍 renderHabits: Rendering', this.habits.length, 'habits');
 
         container.innerHTML = this.habits.map(habit => `
             <div class="habit-item" style="border-left-color: ${habit.color}">
