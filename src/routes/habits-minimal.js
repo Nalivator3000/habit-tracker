@@ -201,12 +201,11 @@ router.post('/:habitId/log', async (req, res) => {
 
     const { query } = require('../config/database');
 
-    // Insert into habit_logs table
+    // Insert into habit_logs table (using existing schema)
     const result = await query(`
       INSERT INTO habit_logs (
-        habit_id, user_id, date, status, completion_count, notes,
-        completed_at, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW(), NOW())
+        habit_id, user_id, date, status, completion_count, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `, [
       parseInt(habitId),
@@ -230,7 +229,6 @@ router.post('/:habitId/log', async (req, res) => {
         status: savedLog.status,
         completion_count: savedLog.completion_count,
         notes: savedLog.notes,
-        completed_at: savedLog.completed_at,
         created_at: savedLog.created_at
       }
     });
