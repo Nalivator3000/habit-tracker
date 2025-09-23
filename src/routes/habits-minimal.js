@@ -87,85 +87,100 @@ router.get('/', (req, res) => {
   }
 });
 
-// Today's habits endpoint for frontend compatibility
-router.get('/logs/today', (req, res) => {
-  console.log('✅ MINIMAL: Today\'s habits endpoint hit');
+// Today's habits endpoint - now reading from database
+router.get('/logs/today', async (req, res) => {
+  console.log('✅ DB: Today\'s habits endpoint hit');
 
   try {
-    // Return mock today's logs - some completed, some pending
-    const mockTodayLogs = [
-      {
-        id: 1,
-        habit_id: 1,
-        habit_name: 'Morning Exercise',
-        status: 'completed',
-        date: new Date().toISOString().split('T')[0],
-        completed_at: new Date().toISOString(),
-        notes: 'Great workout today!'
-      },
-      {
-        id: 2,
-        habit_id: 3,
-        habit_name: 'Drink Water',
-        status: 'partial',
-        date: new Date().toISOString().split('T')[0],
-        completed_count: 5,
-        target_count: 8,
-        completed_at: new Date().toISOString()
-      }
-    ];
+    const { query } = require('../config/database');
+    const today = new Date().toISOString().split('T')[0];
+    const userId = 3; // Hardcoded user ID for demo
+
+    console.log('✅ DB: Fetching logs for date:', today, 'user:', userId);
+
+    // Get today's logs from database
+    const result = await query(`
+      SELECT
+        hl.*,
+        h.name as habit_name,
+        h.target_count
+      FROM habit_logs hl
+      JOIN habits h ON hl.habit_id = h.id
+      WHERE hl.user_id = $1 AND hl.date = $2
+      ORDER BY hl.created_at DESC
+    `, [userId, today]);
+
+    const todayLogs = result.rows;
+    console.log('✅ DB: Found', todayLogs.length, 'logs for today');
 
     res.json({
       success: true,
-      logs: mockTodayLogs,
-      count: mockTodayLogs.length,
-      date: new Date().toISOString().split('T')[0],
-      message: 'Mock today logs - zero dependencies'
+      logs: todayLogs,
+      count: todayLogs.length,
+      date: today,
+      message: 'Real database logs'
     });
 
   } catch (error) {
-    console.error('❌ MINIMAL: Error in today logs endpoint:', error);
+    console.error('❌ DB: Error in today logs endpoint:', error);
     res.status(500).json({
       success: false,
-      error: 'Today logs endpoint failed',
+      error: 'Database error while fetching today logs',
       message: error.message
     });
   }
 });
 
 // Habit logging endpoint - POST /habits/:habitId/log
-router.post('/:habitId/log', (req, res) => {
-  console.log('✅ MINIMAL: Habit logging endpoint hit');
+router.post('/:habitId/log', async (req, res) => {
+  console.log('✅ DB: Habit logging endpoint hit');
   const { habitId } = req.params;
   const { date, status, completion_count, notes } = req.body;
 
   try {
-    console.log('✅ MINIMAL: Logging habit:', { habitId, date, status, completion_count, notes });
+    console.log('✅ DB: Logging habit to database:', { habitId, date, status, completion_count, notes });
 
-    // Return mock successful log response
-    const mockLog = {
-      id: Math.floor(Math.random() * 1000),
-      habit_id: parseInt(habitId),
-      habit_name: `Habit ${habitId}`,
-      date: date || new Date().toISOString().split('T')[0],
-      status: status || 'completed',
-      completion_count: completion_count || 1,
-      notes: notes || '',
-      completed_at: new Date().toISOString(),
-      created_at: new Date().toISOString()
-    };
+    const { query } = require('../config/database');
+
+    // Insert into habit_logs table
+    const result = await query(`
+      INSERT INTO habit_logs (
+        habit_id, user_id, date, status, completion_count, notes,
+        completed_at, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW(), NOW())
+      RETURNING *
+    `, [
+      parseInt(habitId),
+      3, // Hardcoded user ID for demo
+      date || new Date().toISOString().split('T')[0],
+      status || 'completed',
+      completion_count || 1,
+      notes || ''
+    ]);
+
+    const savedLog = result.rows[0];
+    console.log('✅ DB: Habit logged successfully:', savedLog.id);
 
     res.status(201).json({
       success: true,
-      message: 'Habit logged successfully',
-      log: mockLog
+      message: 'Habit logged successfully to database',
+      log: {
+        id: savedLog.id,
+        habit_id: savedLog.habit_id,
+        date: savedLog.date,
+        status: savedLog.status,
+        completion_count: savedLog.completion_count,
+        notes: savedLog.notes,
+        completed_at: savedLog.completed_at,
+        created_at: savedLog.created_at
+      }
     });
 
   } catch (error) {
-    console.error('❌ MINIMAL: Error in habit logging:', error);
+    console.error('❌ DB: Error in habit logging:', error);
     res.status(500).json({
       success: false,
-      error: 'Habit logging failed',
+      error: 'Database error while logging habit',
       message: error.message
     });
   }

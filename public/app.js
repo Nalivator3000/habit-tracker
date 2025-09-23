@@ -8,9 +8,7 @@ class HabitTrackerApp {
         this.selectedColor = '#3B82F6';
         this.editingHabit = null;
 
-        // Load completed habits from localStorage
-        this.completedToday = JSON.parse(localStorage.getItem('habitTracker_completedToday') || '{}');
-        console.log('🔍 Constructor: Loaded completed habits:', this.completedToday);
+        // No localStorage - everything goes to database
 
         this.init();
     }
@@ -112,14 +110,8 @@ class HabitTrackerApp {
             const totalHabits = this.habits.length;
             const activeStreaks = this.habits.filter(h => h.streak_count > 0).length;
 
-            // Count completed from API + localStorage
-            const apiCompleted = response.success ? response.logs.filter(l => l.status === 'completed').length : 0;
-            const today = new Date().toISOString().split('T')[0];
-            const localCompleted = this.completedToday[today] ? Object.keys(this.completedToday[today]).filter(habitId =>
-                this.completedToday[today][habitId].status === 'completed'
-            ).length : 0;
-
-            const completedToday = Math.max(apiCompleted, localCompleted); // Take the higher count
+            // Count completed from database only
+            const completedToday = response.success ? response.logs.filter(l => l.status === 'completed').length : 0;
             const completionRate = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
 
             this.renderStats({
@@ -195,19 +187,7 @@ class HabitTrackerApp {
             console.log('🔍 logHabit: Starting for habit', habitId, 'with status', status);
             const today = new Date().toISOString().split('T')[0];
 
-            // Save to localStorage immediately
-            if (!this.completedToday[today]) {
-                this.completedToday[today] = {};
-            }
-            this.completedToday[today][habitId] = {
-                status,
-                timestamp: new Date().toISOString(),
-                completion_count: 1
-            };
-            localStorage.setItem('habitTracker_completedToday', JSON.stringify(this.completedToday));
-            console.log('🔍 logHabit: Saved to localStorage:', this.completedToday);
-
-            // Try to save to API
+            // Save directly to database via API
             const response = await this.fetchAPI(`/habits/${habitId}/log`, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -217,20 +197,17 @@ class HabitTrackerApp {
                 })
             });
 
-            console.log('🔍 logHabit: API response:', response);
+            console.log('🔍 logHabit: Database response:', response);
 
             if (response.success) {
-                console.log('🔍 logHabit: API success, refreshing data...');
-                this.loadData(); // Refresh all data
+                console.log('🔍 logHabit: Saved to database successfully!');
+                this.loadData(); // Refresh all data from database
             } else {
-                console.log('🔍 logHabit: API failed, but localStorage saved');
-                // Still refresh to show localStorage data
-                this.loadData();
+                alert(response.message || 'Failed to save habit to database');
             }
         } catch (error) {
-            console.error('🔍 logHabit: ERROR:', error);
-            // Even if API fails, refresh to show localStorage data
-            this.loadData();
+            console.error('🔍 logHabit: Database ERROR:', error);
+            alert('Failed to save habit to database');
         }
     }
 
@@ -350,13 +327,9 @@ class HabitTrackerApp {
 
         container.innerHTML = dailyHabits.map(habit => {
             const log = todayLogs.find(l => l.habit_id === habit.id);
-            const today = new Date().toISOString().split('T')[0];
+            const completed = log && log.status === 'completed';
 
-            // Check localStorage for completion status
-            const localCompleted = this.completedToday[today] && this.completedToday[today][habit.id];
-            const completed = (log && log.status === 'completed') || (localCompleted && localCompleted.status === 'completed');
-
-            console.log('🔍 renderTodayHabits: Habit', habit.id, habit.name, 'log:', log, 'localCompleted:', localCompleted, 'final completed:', completed);
+            console.log('🔍 renderTodayHabits: Habit', habit.id, habit.name, 'log:', log, 'completed:', completed);
 
             return `
                 <div class="habit-item" style="border-left-color: ${habit.color}; ${completed ? 'opacity: 0.7;' : ''}">
