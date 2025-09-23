@@ -72,4 +72,50 @@ router.get('/', (req, res) => {
   }
 });
 
+// Today's habits endpoint for frontend compatibility
+router.get('/logs/today', (req, res) => {
+  console.log('✅ MINIMAL: Today\'s habits endpoint hit');
+
+  try {
+    // Return mock today's logs - some completed, some pending
+    const mockTodayLogs = [
+      {
+        id: 1,
+        habit_id: 1,
+        habit_name: 'Morning Exercise',
+        status: 'completed',
+        date: new Date().toISOString().split('T')[0],
+        completed_at: new Date().toISOString(),
+        notes: 'Great workout today!'
+      },
+      {
+        id: 2,
+        habit_id: 3,
+        habit_name: 'Drink Water',
+        status: 'partial',
+        date: new Date().toISOString().split('T')[0],
+        completed_count: 5,
+        target_count: 8,
+        completed_at: new Date().toISOString()
+      }
+    ];
+
+    res.json({
+      success: true,
+      logs: mockTodayLogs,
+      count: mockTodayLogs.length,
+      date: new Date().toISOString().split('T')[0],
+      message: 'Mock today logs - zero dependencies'
+    });
+
+  } catch (error) {
+    console.error('❌ MINIMAL: Error in today logs endpoint:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Today logs endpoint failed',
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;
