@@ -133,4 +133,42 @@ router.get('/logs/today', (req, res) => {
   }
 });
 
+// Habit logging endpoint - POST /habits/:habitId/log
+router.post('/:habitId/log', (req, res) => {
+  console.log('✅ MINIMAL: Habit logging endpoint hit');
+  const { habitId } = req.params;
+  const { date, status, completion_count, notes } = req.body;
+
+  try {
+    console.log('✅ MINIMAL: Logging habit:', { habitId, date, status, completion_count, notes });
+
+    // Return mock successful log response
+    const mockLog = {
+      id: Math.floor(Math.random() * 1000),
+      habit_id: parseInt(habitId),
+      habit_name: `Habit ${habitId}`,
+      date: date || new Date().toISOString().split('T')[0],
+      status: status || 'completed',
+      completion_count: completion_count || 1,
+      notes: notes || '',
+      completed_at: new Date().toISOString(),
+      created_at: new Date().toISOString()
+    };
+
+    res.status(201).json({
+      success: true,
+      message: 'Habit logged successfully',
+      log: mockLog
+    });
+
+  } catch (error) {
+    console.error('❌ MINIMAL: Error in habit logging:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Habit logging failed',
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;
