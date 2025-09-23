@@ -11,6 +11,21 @@ router.get('/test', (req, res) => {
   });
 });
 
+// Debug endpoint to check what frontend requests
+router.get('/debug', (req, res) => {
+  console.log('🔍 DEBUG: Headers:', req.headers);
+  console.log('🔍 DEBUG: Query:', req.query);
+  console.log('🔍 DEBUG: User agent:', req.get('User-Agent'));
+
+  res.json({
+    success: true,
+    message: 'Debug endpoint',
+    headers: req.headers,
+    query: req.query,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Minimal mock data endpoint
 router.get('/', (req, res) => {
   console.log('✅ MINIMAL: Returning hardcoded mock data');
