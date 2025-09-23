@@ -267,12 +267,14 @@ class HabitTrackerApp {
 
         console.log('🔍 renderHabits: Rendering', this.habits.length, 'habits');
 
-        container.innerHTML = this.habits.map(habit => `
+        container.innerHTML = this.habits.map(habit => {
+            console.log('🔍 renderHabits: Processing habit:', habit.id, habit.name);
+            return `
             <div class="habit-item" style="border-left-color: ${habit.color}">
                 <div class="habit-info">
                     <div class="habit-name">${habit.name}</div>
                     <div class="habit-meta">
-                        <span>🔥 ${habit.streak_count} streak</span>
+                        <span>🔥 ${habit.streak_count || 0} streak</span>
                         <span>📅 ${habit.frequency_type}</span>
                         <span>⭐ ${habit.difficulty_level}/5</span>
                         ${habit.category ? `<span>🏷️ ${habit.category}</span>` : ''}
@@ -290,7 +292,8 @@ class HabitTrackerApp {
                     </button>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
 
     renderTodayHabits(logs) {
