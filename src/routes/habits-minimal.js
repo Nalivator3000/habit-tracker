@@ -26,6 +26,65 @@ router.get('/debug', (req, res) => {
   });
 });
 
+// Fix habit_logs table structure
+router.post('/fix-logs-table', async (req, res) => {
+  try {
+    console.log('🔧 FIXING: habit_logs table structure...');
+    const { query } = require('../config/database');
+
+    // Check current table structure
+    const tableCheck = await query(`
+      SELECT column_name, data_type, is_nullable
+      FROM information_schema.columns
+      WHERE table_name = 'habit_logs'
+      ORDER BY ordinal_position
+    `);
+
+    console.log('📋 Current habit_logs structure:', tableCheck.rows);
+
+    // Add missing columns if they don't exist
+    const columns = tableCheck.rows.map(row => row.column_name);
+
+    if (!columns.includes('completed_at')) {
+      await query('ALTER TABLE habit_logs ADD COLUMN completed_at TIMESTAMP');
+      console.log('✅ Added completed_at column');
+    }
+
+    if (!columns.includes('notes')) {
+      await query('ALTER TABLE habit_logs ADD COLUMN notes TEXT');
+      console.log('✅ Added notes column');
+    }
+
+    if (!columns.includes('completion_count')) {
+      await query('ALTER TABLE habit_logs ADD COLUMN completion_count INTEGER DEFAULT 1');
+      console.log('✅ Added completion_count column');
+    }
+
+    // Check final structure
+    const finalCheck = await query(`
+      SELECT column_name, data_type, is_nullable
+      FROM information_schema.columns
+      WHERE table_name = 'habit_logs'
+      ORDER BY ordinal_position
+    `);
+
+    res.json({
+      success: true,
+      message: 'habit_logs table structure fixed',
+      before: tableCheck.rows,
+      after: finalCheck.rows
+    });
+
+  } catch (error) {
+    console.error('❌ Fix habit_logs table error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fix habit_logs table',
+      message: error.message
+    });
+  }
+});
+
 // Minimal mock data endpoint
 router.get('/', (req, res) => {
   console.log('✅ MINIMAL: Returning hardcoded mock data');
