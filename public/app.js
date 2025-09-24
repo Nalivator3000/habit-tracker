@@ -58,11 +58,14 @@ class HabitTrackerApp {
 
     // Data loading
     async loadData() {
-        await Promise.all([
-            this.loadHabits(),
-            this.loadTodayHabits(),
-            this.loadStats()
-        ]);
+        console.log('🔍 loadData: Starting complete data reload...');
+
+        // Load in sequence to ensure data consistency
+        await this.loadHabits();
+        await this.loadTodayHabits();
+        await this.loadStats();
+
+        console.log('🔍 loadData: All data loaded successfully');
     }
 
     async loadHabits() {
@@ -104,8 +107,11 @@ class HabitTrackerApp {
 
     async loadStats() {
         try {
+            console.log('🔍 loadStats: Starting stats calculation...');
+
             // Get today's logs for completion rate
             const response = await this.fetchAPI('/habits/logs/today');
+            console.log('🔍 loadStats: Today logs response:', response);
 
             const totalHabits = this.habits.length;
             const activeStreaks = this.habits.filter(h => h.streak_count > 0).length;
@@ -114,6 +120,14 @@ class HabitTrackerApp {
             const completedToday = response.success ? response.logs.filter(l => l.status === 'completed').length : 0;
             const completionRate = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
 
+            console.log('🔍 loadStats: Calculated stats:', {
+                totalHabits,
+                completedToday,
+                activeStreaks,
+                completionRate,
+                totalLogsToday: response.success ? response.logs.length : 0
+            });
+
             this.renderStats({
                 totalHabits,
                 completedToday,
@@ -121,7 +135,7 @@ class HabitTrackerApp {
                 completionRate
             });
         } catch (error) {
-            console.error('Failed to load stats:', error);
+            console.error('🔍 loadStats: ERROR:', error);
         }
     }
 
@@ -167,18 +181,34 @@ class HabitTrackerApp {
         if (!confirm('Are you sure you want to delete this habit?')) return;
 
         try {
+            console.log('🔍 deleteHabit: Starting deletion of habit', habitId);
+
             const response = await this.fetchAPI(`/habits/${habitId}`, {
                 method: 'DELETE'
             });
 
+            console.log('🔍 deleteHabit: Delete response:', response);
+
             if (response.success) {
-                this.loadData();
+                console.log('🔍 deleteHabit: Success! Deleted logs:', response.deletedLogs);
+                console.log('🔍 deleteHabit: Refreshing all data...');
+
+                // Force complete data refresh
+                await this.loadData();
+
+                // Show success message with log count
+                const message = response.deletedLogs > 0
+                    ? `Habit deleted successfully! Removed ${response.deletedLogs} today's log(s) to fix statistics.`
+                    : 'Habit deleted successfully!';
+
+                console.log('🔍 deleteHabit: Showing success message:', message);
+                alert(message);
             } else {
-                alert('Failed to delete habit');
+                alert(response.message || 'Failed to delete habit');
             }
         } catch (error) {
-            console.error('Delete habit error:', error);
-            alert('Failed to delete habit');
+            console.error('🔍 deleteHabit: ERROR:', error);
+            alert('Failed to delete habit: ' + error.message);
         }
     }
 
