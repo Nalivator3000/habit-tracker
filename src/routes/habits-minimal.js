@@ -494,32 +494,57 @@ router.delete('/:habitId', async (req, res) => {
   const { habitId } = req.params;
 
   try {
-    console.log('✅ DB: Deleting habit:', habitId);
+    console.log('✅ DB: Deleting habit and today\'s logs:', habitId);
     const { query } = require('../config/database');
+    const today = new Date().toISOString().split('T')[0];
 
-    // Soft delete - set is_archived = true
-    const result = await query(`
-      UPDATE habits
-      SET is_archived = true, updated_at = NOW()
-      WHERE id = $1 AND user_id = $2
-      RETURNING *
-    `, [parseInt(habitId), 3]); // Hardcoded user ID
+    // Start transaction
+    await query('BEGIN');
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Habit not found',
-        message: 'Habit not found or already deleted'
+    try {
+      // 1. Delete today's logs for this habit to fix statistics
+      const deleteLogsResult = await query(`
+        DELETE FROM habit_logs
+        WHERE habit_id = $1 AND user_id = $2 AND date = $3
+        RETURNING *
+      `, [parseInt(habitId), 3, today]);
+
+      console.log('✅ DB: Deleted', deleteLogsResult.rows.length, 'log entries for today');
+
+      // 2. Soft delete habit - set is_archived = true
+      const result = await query(`
+        UPDATE habits
+        SET is_archived = true, updated_at = NOW()
+        WHERE id = $1 AND user_id = $2
+        RETURNING *
+      `, [parseInt(habitId), 3]); // Hardcoded user ID
+
+      if (result.rows.length === 0) {
+        await query('ROLLBACK');
+        return res.status(404).json({
+          success: false,
+          error: 'Habit not found',
+          message: 'Habit not found or already deleted'
+        });
+      }
+
+      // Commit transaction
+      await query('COMMIT');
+
+      console.log('✅ DB: Habit archived successfully:', result.rows[0].name);
+      console.log('✅ DB: Today\'s logs cleared to fix statistics');
+
+      res.json({
+        success: true,
+        message: 'Habit deleted successfully (including today\'s progress)',
+        habit: result.rows[0],
+        deletedLogs: deleteLogsResult.rows.length
       });
+
+    } catch (transactionError) {
+      await query('ROLLBACK');
+      throw transactionError;
     }
-
-    console.log('✅ DB: Habit archived successfully:', result.rows[0].name);
-
-    res.json({
-      success: true,
-      message: 'Habit deleted successfully',
-      habit: result.rows[0]
-    });
 
   } catch (error) {
     console.error('❌ DB: Error deleting habit:', error);
