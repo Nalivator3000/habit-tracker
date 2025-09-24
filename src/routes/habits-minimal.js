@@ -339,4 +339,138 @@ router.post('/:habitId/log', async (req, res) => {
   }
 });
 
+// Create new habit endpoint - POST /habits (without ID)
+router.post('/', async (req, res) => {
+  console.log('✅ DB: Create new habit endpoint hit');
+  const { name, description, color, frequency_type, target_count, difficulty_level, category } = req.body;
+
+  try {
+    console.log('✅ DB: Creating new habit:', { name, frequency_type, target_count });
+    const { query } = require('../config/database');
+
+    // Insert new habit (let database generate ID)
+    const result = await query(`
+      INSERT INTO habits (
+        user_id, name, description, color, frequency_type,
+        target_count, difficulty_level, is_archived, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+      RETURNING *
+    `, [
+      3, // Hardcoded user ID
+      name,
+      description || '',
+      color || '#3B82F6',
+      frequency_type || 'daily',
+      target_count || 1,
+      difficulty_level || 3,
+      false
+    ]);
+
+    const newHabit = result.rows[0];
+    console.log('✅ DB: New habit created with ID:', newHabit.id);
+
+    res.status(201).json({
+      success: true,
+      message: 'Habit created successfully',
+      habit: newHabit
+    });
+
+  } catch (error) {
+    console.error('❌ DB: Error creating new habit:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Database error while creating habit',
+      message: error.message
+    });
+  }
+});
+
+// Delete habit endpoint - DELETE /habits/:habitId
+router.delete('/:habitId', async (req, res) => {
+  console.log('✅ DB: Delete habit endpoint hit');
+  const { habitId } = req.params;
+
+  try {
+    console.log('✅ DB: Deleting habit:', habitId);
+    const { query } = require('../config/database');
+
+    // Soft delete - set is_archived = true
+    const result = await query(`
+      UPDATE habits
+      SET is_archived = true, updated_at = NOW()
+      WHERE id = $1 AND user_id = $2
+      RETURNING *
+    `, [parseInt(habitId), 3]); // Hardcoded user ID
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Habit not found',
+        message: 'Habit not found or already deleted'
+      });
+    }
+
+    console.log('✅ DB: Habit archived successfully:', result.rows[0].name);
+
+    res.json({
+      success: true,
+      message: 'Habit deleted successfully',
+      habit: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('❌ DB: Error deleting habit:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Database error while deleting habit',
+      message: error.message
+    });
+  }
+});
+
+// Edit/Update habit endpoint - PUT /habits/:habitId
+router.put('/:habitId', async (req, res) => {
+  console.log('✅ DB: Update habit endpoint hit');
+  const { habitId } = req.params;
+  const { name, description, color, frequency_type, target_count, difficulty_level } = req.body;
+
+  try {
+    console.log('✅ DB: Updating habit:', habitId, 'with data:', req.body);
+    const { query } = require('../config/database');
+
+    // Update habit
+    const result = await query(`
+      UPDATE habits
+      SET name = $1, description = $2, color = $3, frequency_type = $4,
+          target_count = $5, difficulty_level = $6, updated_at = NOW()
+      WHERE id = $7 AND user_id = $8
+      RETURNING *
+    `, [name, description, color, frequency_type, target_count, difficulty_level, parseInt(habitId), 3]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Habit not found',
+        message: 'Habit not found or access denied'
+      });
+    }
+
+    console.log('✅ DB: Habit updated successfully:', result.rows[0].name);
+
+    res.json({
+      success: true,
+      message: 'Habit updated successfully',
+      habit: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('❌ DB: Error updating habit:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Database error while updating habit',
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;
