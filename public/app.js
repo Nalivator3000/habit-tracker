@@ -1,7 +1,10 @@
 // Habit Tracker Web App
 class HabitTrackerApp {
     constructor() {
+        console.log('🚀 INIT: HabitTrackerApp constructor started');
         this.apiBase = window.location.origin + '/api';
+        console.log('🚀 INIT: API Base set to:', this.apiBase);
+
         this.token = localStorage.getItem('habitTracker_token');
         this.user = null;
         this.habits = [];
@@ -10,17 +13,24 @@ class HabitTrackerApp {
 
         // No localStorage - everything goes to database
 
+        console.log('🚀 INIT: About to call init()');
         this.init();
+        console.log('🚀 INIT: Constructor completed');
     }
 
     init() {
+        console.log('🚀 INIT: init() method started');
         this.setupEventListeners();
+        console.log('🚀 INIT: Event listeners set up');
 
         // Skip authentication - directly show main app
         this.showApp();
+        console.log('🚀 INIT: App shown');
 
         // Load all data including today's logs on initialization
+        console.log('🚀 INIT: About to call loadData()');
         this.loadData();
+        console.log('🚀 INIT: init() method completed');
     }
 
     setupEventListeners() {
@@ -62,12 +72,21 @@ class HabitTrackerApp {
     async loadData() {
         console.log('🔍 loadData: Starting complete data reload...');
 
-        // Load in sequence to ensure data consistency
-        await this.loadHabits();
-        await this.loadTodayHabits();
-        await this.loadStats();
+        try {
+            // Load in sequence to ensure data consistency
+            console.log('🔍 loadData: Step 1 - Loading habits...');
+            await this.loadHabits();
 
-        console.log('🔍 loadData: All data loaded successfully');
+            console.log('🔍 loadData: Step 2 - Loading today habits...');
+            await this.loadTodayHabits();
+
+            console.log('🔍 loadData: Step 3 - Loading stats...');
+            await this.loadStats();
+
+            console.log('🔍 loadData: All data loaded successfully');
+        } catch (error) {
+            console.error('🔍 loadData: ERROR during data loading:', error);
+        }
     }
 
     async loadHabits() {
