@@ -26,6 +26,103 @@ router.get('/debug', (req, res) => {
   });
 });
 
+// Database testing endpoint
+router.get('/db-test', async (req, res) => {
+  try {
+    console.log('🧪 DB-TEST: Starting comprehensive database test...');
+    const { query } = require('../config/database');
+    const results = [];
+
+    // Test 1: Check habits table structure
+    const habitsStructure = await query(`
+      SELECT column_name, data_type, is_nullable
+      FROM information_schema.columns
+      WHERE table_name = 'habits'
+      ORDER BY ordinal_position
+    `);
+    results.push({
+      test: 'Habits table structure',
+      status: 'success',
+      data: habitsStructure.rows
+    });
+
+    // Test 2: Check habit_logs table structure
+    const logsStructure = await query(`
+      SELECT column_name, data_type, is_nullable
+      FROM information_schema.columns
+      WHERE table_name = 'habit_logs'
+      ORDER BY ordinal_position
+    `);
+    results.push({
+      test: 'Habit_logs table structure',
+      status: 'success',
+      data: logsStructure.rows
+    });
+
+    // Test 3: Count habits
+    const habitsCount = await query('SELECT COUNT(*) as count FROM habits WHERE is_archived = false OR is_archived IS NULL');
+    results.push({
+      test: 'Active habits count',
+      status: 'success',
+      data: habitsCount.rows[0]
+    });
+
+    // Test 4: Count logs
+    const logsCount = await query('SELECT COUNT(*) as count FROM habit_logs');
+    results.push({
+      test: 'Total logs count',
+      status: 'success',
+      data: logsCount.rows[0]
+    });
+
+    // Test 5: Check today's logs
+    const today = new Date().toISOString().split('T')[0];
+    const todayLogs = await query('SELECT COUNT(*) as count FROM habit_logs WHERE date = $1', [today]);
+    results.push({
+      test: 'Today logs count',
+      status: 'success',
+      data: { date: today, count: todayLogs.rows[0].count }
+    });
+
+    // Test 6: List all habits with details
+    const allHabits = await query('SELECT id, name, is_archived, created_at FROM habits ORDER BY id');
+    results.push({
+      test: 'All habits list',
+      status: 'success',
+      data: allHabits.rows
+    });
+
+    // Test 7: List recent logs
+    const recentLogs = await query(`
+      SELECT hl.*, h.name as habit_name
+      FROM habit_logs hl
+      JOIN habits h ON hl.habit_id = h.id
+      ORDER BY hl.created_at DESC
+      LIMIT 10
+    `);
+    results.push({
+      test: 'Recent logs (last 10)',
+      status: 'success',
+      data: recentLogs.rows
+    });
+
+    res.json({
+      success: true,
+      message: 'Database test completed',
+      timestamp: new Date().toISOString(),
+      results: results
+    });
+
+  } catch (error) {
+    console.error('🧪 DB-TEST: ERROR:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Database test failed',
+      message: error.message
+    });
+  }
+});
+
 // Fix habit_logs table structure
 router.post('/fix-logs-table', async (req, res) => {
   try {
@@ -297,11 +394,17 @@ router.post('/:habitId/log', async (req, res) => {
 
     const { query } = require('../config/database');
 
-    // Insert into habit_logs table (using existing schema)
+    // UPSERT into habit_logs table (INSERT or UPDATE if exists)
     const result = await query(`
       INSERT INTO habit_logs (
         habit_id, user_id, date, status, completion_count, notes
       ) VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (habit_id, date)
+      DO UPDATE SET
+        status = EXCLUDED.status,
+        completion_count = EXCLUDED.completion_count,
+        notes = EXCLUDED.notes,
+        created_at = CURRENT_TIMESTAMP
       RETURNING *
     `, [
       parseInt(habitId),
