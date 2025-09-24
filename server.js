@@ -240,6 +240,7 @@ app.get('/test-db-interface', (req, res) => {
             <button class="test-button" onclick="runDatabaseTest()">📊 Database Structure</button>
             <button class="test-button" onclick="testHabitLogging()">✅ Test Habit Logging</button>
             <button class="test-button" onclick="testUndoFunctionality()">↶ Test Undo Functionality</button>
+            <button class="test-button" onclick="testDataPersistence()">💾 Test Data Persistence</button>
             <button class="test-button" onclick="testHabitCRUD()">🔄 Test CRUD Operations</button>
             <button class="test-button" onclick="resetDatabase()">🧹 Reset Database</button>
             <button class="test-button" onclick="clearResults()">🗑️ Clear Results</button>
@@ -363,6 +364,80 @@ app.get('/test-db-interface', (req, res) => {
             }
         }
 
+        async function testDataPersistence() {
+            addResult('Data Persistence Test', 'loading');
+
+            try {
+                // Step 1: Create a known state - log habit 1
+                addResult('Step 1: Creating known data state...', 'loading');
+                const logResponse = await fetchAPI('/1/log', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        date: new Date().toISOString().split('T')[0],
+                        status: 'completed',
+                        completion_count: 1,
+                        notes: 'Data persistence test'
+                    })
+                });
+
+                if (!logResponse.success) {
+                    addResult('Data Persistence Test ❌', 'error', { error: 'Failed to create test data' });
+                    return;
+                }
+
+                // Step 2: Verify data exists in today's logs
+                addResult('Step 2: Verifying data exists...', 'loading');
+                const todayResponse = await fetchAPI('/logs/today');
+
+                if (todayResponse.success) {
+                    const habit1Log = todayResponse.logs.find(log => log.habit_id === 1 && log.status === 'completed');
+
+                    if (habit1Log) {
+                        addResult('Step 2: Data exists ✅', 'success', {
+                            logFound: habit1Log,
+                            totalLogs: todayResponse.logs.length
+                        });
+
+                        // Step 3: Simulate reload by fetching again after delay
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        addResult('Step 3: Testing persistence after reload...', 'loading');
+
+                        const reloadResponse = await fetchAPI('/logs/today');
+
+                        if (reloadResponse.success) {
+                            const persistedLog = reloadResponse.logs.find(log => log.habit_id === 1 && log.status === 'completed');
+
+                            if (persistedLog) {
+                                addResult('Data Persistence Test ✅', 'success', {
+                                    message: 'Data persists correctly after reload simulation',
+                                    originalLog: habit1Log,
+                                    persistedLog: persistedLog,
+                                    dataMatches: habit1Log.id === persistedLog.id
+                                });
+                            } else {
+                                addResult('Data Persistence Test ❌', 'error', {
+                                    error: 'Data lost after reload simulation',
+                                    logsAfterReload: reloadResponse.logs
+                                });
+                            }
+                        } else {
+                            addResult('Data Persistence Test ❌', 'error', { error: 'Failed to fetch data after reload' });
+                        }
+                    } else {
+                        addResult('Data Persistence Test ❌', 'error', {
+                            error: 'Created data not found in today logs',
+                            availableLogs: todayResponse.logs
+                        });
+                    }
+                } else {
+                    addResult('Data Persistence Test ❌', 'error', { error: 'Failed to fetch today logs' });
+                }
+
+            } catch (error) {
+                addResult('Data Persistence Test ❌', 'error', { error: error.message });
+            }
+        }
+
         async function testHabitCRUD() {
             addResult('CRUD Operations Test', 'loading');
             try {
@@ -398,6 +473,8 @@ app.get('/test-db-interface', (req, res) => {
             await testHabitLogging();
             await new Promise(resolve => setTimeout(resolve, 1000));
             await testUndoFunctionality();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testDataPersistence();
             addResult('All tests completed! 🎉', 'success');
         }
 

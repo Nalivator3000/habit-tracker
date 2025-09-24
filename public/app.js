@@ -18,7 +18,9 @@ class HabitTrackerApp {
 
         // Skip authentication - directly show main app
         this.showApp();
-        this.loadHabits();
+
+        // Load all data including today's logs on initialization
+        this.loadData();
     }
 
     setupEventListeners() {
@@ -98,10 +100,17 @@ class HabitTrackerApp {
 
             if (response.success) {
                 console.log('🔍 loadTodayHabits: Calling renderTodayHabits with logs:', response.logs);
+                console.log('🔍 loadTodayHabits: Current habits count:', this.habits.length);
                 this.renderTodayHabits(response.logs);
+            } else {
+                console.log('🔍 loadTodayHabits: Response not successful:', response);
+                // Still render with empty logs to show habits
+                this.renderTodayHabits([]);
             }
         } catch (error) {
             console.error('🔍 loadTodayHabits: ERROR:', error);
+            // Render with empty logs in case of error
+            this.renderTodayHabits([]);
         }
     }
 
