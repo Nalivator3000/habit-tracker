@@ -239,6 +239,7 @@ app.get('/test-db-interface', (req, res) => {
             <button class="test-button" onclick="runAllTests()">🚀 Run All Tests</button>
             <button class="test-button" onclick="runDatabaseTest()">📊 Database Structure</button>
             <button class="test-button" onclick="testHabitLogging()">✅ Test Habit Logging</button>
+            <button class="test-button" onclick="testUndoFunctionality()">↶ Test Undo Functionality</button>
             <button class="test-button" onclick="testHabitCRUD()">🔄 Test CRUD Operations</button>
             <button class="test-button" onclick="resetDatabase()">🧹 Reset Database</button>
             <button class="test-button" onclick="clearResults()">🗑️ Clear Results</button>
@@ -310,6 +311,58 @@ app.get('/test-db-interface', (req, res) => {
             }
         }
 
+        async function testUndoFunctionality() {
+            addResult('Undo Functionality Test', 'loading');
+
+            try {
+                // Step 1: First log a habit completion
+                addResult('Step 1: Logging habit completion...', 'loading');
+                const logResponse = await fetchAPI('/1/log', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        date: new Date().toISOString().split('T')[0],
+                        status: 'completed',
+                        completion_count: 1,
+                        notes: 'Test for undo functionality'
+                    })
+                });
+
+                if (logResponse.success) {
+                    addResult('Step 1: Habit logged ✅', 'success', logResponse);
+
+                    // Step 2: Wait a bit then undo the habit
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    addResult('Step 2: Testing undo...', 'loading');
+
+                    const undoResponse = await fetchAPI('/1/log', {
+                        method: 'DELETE'
+                    });
+
+                    if (undoResponse.success) {
+                        addResult('Step 2: Undo successful ✅', 'success', undoResponse);
+                        addResult('Undo Functionality Test ✅', 'success', {
+                            message: 'Complete undo flow working correctly',
+                            loggedData: logResponse,
+                            undoData: undoResponse
+                        });
+                    } else {
+                        addResult('Undo Functionality Test ❌', 'error', {
+                            error: 'Undo failed',
+                            response: undoResponse
+                        });
+                    }
+                } else {
+                    addResult('Undo Functionality Test ❌', 'error', {
+                        error: 'Initial logging failed',
+                        response: logResponse
+                    });
+                }
+
+            } catch (error) {
+                addResult('Undo Functionality Test ❌', 'error', { error: error.message });
+            }
+        }
+
         async function testHabitCRUD() {
             addResult('CRUD Operations Test', 'loading');
             try {
@@ -343,6 +396,8 @@ app.get('/test-db-interface', (req, res) => {
             await testHabitCRUD();
             await new Promise(resolve => setTimeout(resolve, 1000));
             await testHabitLogging();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testUndoFunctionality();
             addResult('All tests completed! 🎉', 'success');
         }
 

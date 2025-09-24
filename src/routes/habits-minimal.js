@@ -663,6 +663,56 @@ router.delete('/:habitId', async (req, res) => {
   }
 });
 
+// Undo habit completion endpoint - DELETE /habits/:habitId/log
+router.delete('/:habitId/log', async (req, res) => {
+  console.log('🔄 UNDO: Undo habit completion endpoint hit');
+  const { habitId } = req.params;
+
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    console.log('🔄 UNDO: Removing log for habit', habitId, 'on date', today);
+
+    const { query } = require('../config/database');
+
+    // Delete today's log for this habit
+    const result = await query(`
+      DELETE FROM habit_logs
+      WHERE habit_id = $1 AND user_id = $2 AND date = $3
+      RETURNING *
+    `, [parseInt(habitId), 3, today]); // Hardcoded user ID
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Log not found',
+        message: 'No log found for this habit today'
+      });
+    }
+
+    const deletedLog = result.rows[0];
+    console.log('🔄 UNDO: Log deleted successfully:', deletedLog.id);
+
+    res.json({
+      success: true,
+      message: 'Habit completion undone successfully',
+      deletedLog: {
+        id: deletedLog.id,
+        habit_id: deletedLog.habit_id,
+        date: deletedLog.date,
+        status: deletedLog.status
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ UNDO: Error undoing habit:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Database error while undoing habit',
+      message: error.message
+    });
+  }
+});
+
 // Edit/Update habit endpoint - PUT /habits/:habitId
 router.put('/:habitId', async (req, res) => {
   console.log('✅ DB: Update habit endpoint hit');

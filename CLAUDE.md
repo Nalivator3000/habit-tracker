@@ -92,6 +92,7 @@ CREATE TABLE habit_logs (
 - `PUT /api/habits/:id` - Обновить привычку
 - `DELETE /api/habits/:id` - Удалить привычку (soft delete)
 - `POST /api/habits/:id/log` - Записать выполнение привычки
+- `DELETE /api/habits/:id/log` - Отменить выполнение привычки (UNDO)
 - `GET /api/habits/logs/today` - Получить логи за сегодня
 
 ### Testing & Admin Routes
@@ -106,6 +107,7 @@ CREATE TABLE habit_logs (
 4. **Comprehensive Testing** - Полное покрытие тестами
 5. **Statistics Calculation** - Точные статистики без переполнения
 6. **Error Handling** - Подробная обработка ошибок
+7. **Undo Functionality** - Возможность отменить выполненные задачи
 
 ## Development Guidelines
 

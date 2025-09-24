@@ -241,6 +241,35 @@ class HabitTrackerApp {
         }
     }
 
+    async undoHabit(habitId) {
+        try {
+            console.log('🔄 undoHabit: Starting undo for habit', habitId);
+
+            // Confirm the undo action
+            if (!confirm('Are you sure you want to undo this habit completion?')) {
+                return;
+            }
+
+            // Remove log from database via DELETE API
+            const response = await this.fetchAPI(`/habits/${habitId}/log`, {
+                method: 'DELETE'
+            });
+
+            console.log('🔄 undoHabit: Database response:', response);
+
+            if (response.success) {
+                console.log('🔄 undoHabit: Undone successfully!');
+                this.loadData(); // Refresh all data from database
+                this.showMessage('todayHabits', 'Habit completion undone successfully!', 'success');
+            } else {
+                alert(response.message || 'Failed to undo habit completion');
+            }
+        } catch (error) {
+            console.error('🔄 undoHabit: Database ERROR:', error);
+            alert('Failed to undo habit completion');
+        }
+    }
+
     // UI Management - simplified for demo mode
 
     showApp() {
@@ -381,7 +410,12 @@ class HabitTrackerApp {
                                 ⏭️ Skip
                             </button>
                         ` : `
-                            <span style="color: #10B981; font-weight: 500;">Completed! 🎉</span>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="color: #10B981; font-weight: 500;">Completed! 🎉</span>
+                                <button class="btn btn-secondary btn-small" data-action="undo-habit" data-habit-id="${habit.id}" title="Undo completion">
+                                    ↶ Undo
+                                </button>
+                            </div>
                         `}
                     </div>
                 </div>
@@ -473,6 +507,12 @@ document.addEventListener('click', function(e) {
     if (e.target.matches('button[data-action="skip-habit"]')) {
         const habitId = parseInt(e.target.dataset.habitId);
         app.logHabit(habitId, 'skipped');
+    }
+
+    // Handle habit undo buttons
+    if (e.target.matches('button[data-action="undo-habit"]')) {
+        const habitId = parseInt(e.target.dataset.habitId);
+        app.undoHabit(habitId);
     }
 
     // Handle habit edit buttons
