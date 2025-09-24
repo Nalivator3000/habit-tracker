@@ -44,7 +44,8 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files
+// Serve static files with proper handling
+app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Health check endpoint with graceful database handling
@@ -209,16 +210,13 @@ app.use((req, res) => {
       message: `Cannot ${req.method} ${req.originalUrl}`,
     });
   } else {
-    // Check if file exists in public folder, otherwise serve index.html
-    const fs = require('fs');
-    const requestedFile = path.join(__dirname, 'public', req.path);
-
-    // If specific file exists, let express.static handle it (it should have already)
-    // If not, serve index.html for SPA routes
-    if (fs.existsSync(requestedFile) && fs.statSync(requestedFile).isFile()) {
-      res.sendFile(requestedFile);
-    } else {
+    // For non-API routes, only serve index.html for root or unknown routes
+    // Let express.static handle actual files
+    if (req.path === '/' || req.path === '') {
       res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    } else {
+      // 404 for other non-existent routes
+      res.status(404).send('Not Found');
     }
   }
 });
