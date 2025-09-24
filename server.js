@@ -200,11 +200,27 @@ app.get('/api', (req, res) => {
 
 // Direct route for database testing interface
 app.get('/db-test', (req, res) => {
+  console.log('🧪 DB-TEST: Serving db-test.html');
   res.sendFile(path.join(__dirname, 'public', 'db-test.html'));
 });
 
 app.get('/db-test.html', (req, res) => {
+  console.log('🧪 DB-TEST: Serving db-test.html via .html route');
   res.sendFile(path.join(__dirname, 'public', 'db-test.html'));
+});
+
+// Testing route for debugging
+app.get('/test-db-interface', (req, res) => {
+  const fs = require('fs');
+  const filePath = path.join(__dirname, 'public', 'db-test.html');
+
+  if (fs.existsSync(filePath)) {
+    console.log('🧪 DB-TEST: File exists, sending content');
+    res.sendFile(filePath);
+  } else {
+    console.log('❌ DB-TEST: File not found at:', filePath);
+    res.status(404).send('db-test.html not found');
+  }
 });
 
 // API routes
