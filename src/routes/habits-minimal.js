@@ -93,10 +93,10 @@ router.get('/', async (req, res) => {
     const { query } = require('../config/database');
     const userId = 3; // Hardcoded user ID
 
-    // Get habits from database
+    // Get habits from database (using is_archived instead of is_active)
     const result = await query(`
       SELECT * FROM habits
-      WHERE user_id = $1 AND is_active = true
+      WHERE user_id = $1 AND (is_archived = false OR is_archived IS NULL)
       ORDER BY created_at ASC
     `, [userId]);
 
@@ -117,11 +117,11 @@ router.get('/', async (req, res) => {
 
       for (const habit of mockHabits) {
         const result = await query(`
-          INSERT INTO habits (id, user_id, name, description, color, frequency_type, target_count, difficulty_level, is_active, created_at, updated_at)
+          INSERT INTO habits (id, user_id, name, description, color, frequency_type, target_count, difficulty_level, is_archived, created_at, updated_at)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
           ON CONFLICT (id) DO NOTHING
           RETURNING *
-        `, [habit.id, userId, habit.name, habit.description, habit.color, habit.frequency_type, habit.target_count, habit.difficulty_level, true]);
+        `, [habit.id, userId, habit.name, habit.description, habit.color, habit.frequency_type, habit.target_count, habit.difficulty_level, false]);
 
         if (result.rows.length > 0) {
           createdHabits.push(result.rows[0]);
@@ -132,7 +132,7 @@ router.get('/', async (req, res) => {
       // Return the created habits
       return res.json({
         success: true,
-        habits: createdHabits.length > 0 ? createdHabits : mockHabits.map(h => ({ ...h, user_id: userId, is_active: true, created_at: new Date(), updated_at: new Date() })),
+        habits: createdHabits.length > 0 ? createdHabits : mockHabits.map(h => ({ ...h, user_id: userId, is_archived: false, created_at: new Date(), updated_at: new Date() })),
         count: mockHabits.length,
         message: 'Auto-created habits in database'
       });
@@ -246,7 +246,7 @@ router.post('/create-real-habits', async (req, res) => {
         const result = await query(`
           INSERT INTO habits (
             id, user_id, name, description, color, frequency_type,
-            target_count, difficulty_level, is_active, created_at, updated_at
+            target_count, difficulty_level, is_archived, created_at, updated_at
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
           RETURNING *
         `, [
@@ -258,7 +258,7 @@ router.post('/create-real-habits', async (req, res) => {
           habit.frequency_type,
           habit.target_count,
           habit.difficulty_level,
-          true
+          false
         ]);
 
         results.push(result.rows[0]);
