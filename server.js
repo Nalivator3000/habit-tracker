@@ -198,6 +198,15 @@ app.get('/api', (req, res) => {
   });
 });
 
+// Direct route for database testing interface
+app.get('/db-test', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'db-test.html'));
+});
+
+app.get('/db-test.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'db-test.html'));
+});
+
 // API routes
 app.use('/api', require('./src/routes'));
 
