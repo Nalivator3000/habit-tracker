@@ -209,18 +209,153 @@ app.get('/db-test.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'db-test.html'));
 });
 
-// Testing route for debugging
+// Embedded testing interface route
 app.get('/test-db-interface', (req, res) => {
-  const fs = require('fs');
-  const filePath = path.join(__dirname, 'public', 'db-test.html');
+  res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Testing Interface</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: #333; padding: 2rem; }
+        .container { max-width: 1200px; margin: 0 auto; background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 2rem; backdrop-filter: blur(10px); }
+        h1 { color: #4a5568; margin-bottom: 2rem; text-align: center; }
+        .test-button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px; transition: transform 0.2s; }
+        .test-button:hover { transform: translateY(-2px); }
+        .results { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-top: 1rem; max-height: 500px; overflow-y: auto; }
+        .test-result { margin: 1rem 0; padding: 1rem; border-radius: 6px; border-left: 4px solid #10B981; }
+        .test-result.error { border-left-color: #EF4444; background: #FEE2E2; }
+        .test-result.success { border-left-color: #10B981; background: #D1FAE5; }
+        .test-data { background: #ffffff; padding: 1rem; border-radius: 4px; margin-top: 0.5rem; font-family: 'Courier New', monospace; font-size: 14px; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Database Testing Interface</h1>
 
-  if (fs.existsSync(filePath)) {
-    console.log('🧪 DB-TEST: File exists, sending content');
-    res.sendFile(filePath);
-  } else {
-    console.log('❌ DB-TEST: File not found at:', filePath);
-    res.status(404).send('db-test.html not found');
-  }
+        <div style="margin-bottom: 2rem;">
+            <button class="test-button" onclick="runAllTests()">🚀 Run All Tests</button>
+            <button class="test-button" onclick="runDatabaseTest()">📊 Database Structure</button>
+            <button class="test-button" onclick="testHabitLogging()">✅ Test Habit Logging</button>
+            <button class="test-button" onclick="testHabitCRUD()">🔄 Test CRUD Operations</button>
+            <button class="test-button" onclick="resetDatabase()">🧹 Reset Database</button>
+            <button class="test-button" onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+
+        <div class="results" id="results">
+            <p>Click a test button to start testing...</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/habits';
+        let testResults = [];
+
+        async function fetchAPI(endpoint, options = {}) {
+            const response = await fetch(API_BASE + endpoint, {
+                headers: { 'Content-Type': 'application/json' },
+                ...options
+            });
+            if (!response.ok) throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
+            return await response.json();
+        }
+
+        function addResult(title, status, data = null) {
+            testResults.push({ title, status, data, timestamp: new Date().toISOString() });
+            renderResults();
+        }
+
+        function renderResults() {
+            const container = document.getElementById('results');
+            if (testResults.length === 0) {
+                container.innerHTML = '<p>Click a test button to start testing...</p>';
+                return;
+            }
+            container.innerHTML = testResults.map(result => \`
+                <div class="test-result \${result.status}">
+                    <div><strong>\${result.title}</strong> <small>(\${new Date(result.timestamp).toLocaleTimeString()})</small></div>
+                    \${result.data ? \`<div class="test-data">\${JSON.stringify(result.data, null, 2)}</div>\` : ''}
+                </div>
+            \`).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function runDatabaseTest() {
+            addResult('Database Structure Test', 'loading');
+            try {
+                const response = await fetchAPI('/db-test');
+                addResult('Database Structure Test ✅', 'success', response);
+            } catch (error) {
+                addResult('Database Structure Test ❌', 'error', { error: error.message });
+            }
+        }
+
+        async function testHabitLogging() {
+            addResult('Habit Logging Test', 'loading');
+            try {
+                const response = await fetchAPI('/1/log', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        date: new Date().toISOString().split('T')[0],
+                        status: 'completed',
+                        completion_count: 1,
+                        notes: 'Test from embedded interface'
+                    })
+                });
+                addResult('Habit Logging Test ✅', 'success', response);
+            } catch (error) {
+                addResult('Habit Logging Test ❌', 'error', { error: error.message });
+            }
+        }
+
+        async function testHabitCRUD() {
+            addResult('CRUD Operations Test', 'loading');
+            try {
+                const getResponse = await fetchAPI('/');
+                addResult('GET Habits ✅', 'success', { count: getResponse.habits.length, habits: getResponse.habits });
+
+                const todayResponse = await fetchAPI('/logs/today');
+                addResult('GET Today Logs ✅', 'success', { count: todayResponse.count, logs: todayResponse.logs });
+            } catch (error) {
+                addResult('CRUD Operations Test ❌', 'error', { error: error.message });
+            }
+        }
+
+        async function resetDatabase() {
+            if (!confirm('Are you sure you want to reset the entire database?')) return;
+            addResult('Database Reset', 'loading');
+            try {
+                const response = await fetchAPI('/reset-database', { method: 'POST' });
+                addResult('Database Reset ✅', 'success', response);
+                setTimeout(runDatabaseTest, 2000);
+            } catch (error) {
+                addResult('Database Reset ❌', 'error', { error: error.message });
+            }
+        }
+
+        async function runAllTests() {
+            testResults = [];
+            addResult('Starting comprehensive test suite...', 'loading');
+            await runDatabaseTest();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testHabitCRUD();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testHabitLogging();
+            addResult('All tests completed! 🎉', 'success');
+        }
+
+        function clearResults() {
+            testResults = [];
+            renderResults();
+        }
+
+        renderResults();
+    </script>
+</body>
+</html>
+  `);
 });
 
 // API routes
