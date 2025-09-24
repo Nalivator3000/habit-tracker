@@ -296,6 +296,113 @@ router.get('/logs/today', async (req, res) => {
   }
 });
 
+// RESET DATABASE - Clear all data and recreate fresh habits
+router.post('/reset-database', async (req, res) => {
+  try {
+    console.log('🧹 RESET: Clearing all database data...');
+    const { query } = require('../config/database');
+
+    // Start transaction
+    await query('BEGIN');
+
+    try {
+      // 1. Delete all habit logs
+      const deletedLogs = await query('DELETE FROM habit_logs WHERE user_id = $1', [3]);
+      console.log('🧹 RESET: Deleted', deletedLogs.rowCount, 'habit logs');
+
+      // 2. Delete all habits
+      const deletedHabits = await query('DELETE FROM habits WHERE user_id = $1', [3]);
+      console.log('🧹 RESET: Deleted', deletedHabits.rowCount, 'habits');
+
+      // 3. Create fresh habits
+      const freshHabits = [
+        {
+          id: 1,
+          name: 'Morning Exercise',
+          description: 'Daily morning workout',
+          color: '#10B981',
+          frequency_type: 'daily',
+          target_count: 1,
+          difficulty_level: 3
+        },
+        {
+          id: 2,
+          name: 'Read Books',
+          description: 'Read for 30 minutes',
+          color: '#3B82F6',
+          frequency_type: 'daily',
+          target_count: 1,
+          difficulty_level: 2
+        },
+        {
+          id: 3,
+          name: 'Drink Water',
+          description: 'Stay hydrated throughout the day',
+          color: '#F59E0B',
+          frequency_type: 'daily',
+          target_count: 8,
+          difficulty_level: 1
+        }
+      ];
+
+      const createdHabits = [];
+
+      for (const habit of freshHabits) {
+        const result = await query(`
+          INSERT INTO habits (
+            id, user_id, name, description, color, frequency_type,
+            target_count, difficulty_level, is_archived, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+          RETURNING *
+        `, [
+          habit.id,
+          3, // Hardcoded user ID
+          habit.name,
+          habit.description,
+          habit.color,
+          habit.frequency_type,
+          habit.target_count,
+          habit.difficulty_level,
+          false
+        ]);
+
+        createdHabits.push(result.rows[0]);
+        console.log('✅ RESET: Created fresh habit:', habit.name, 'with ID:', habit.id);
+      }
+
+      // Commit transaction
+      await query('COMMIT');
+
+      console.log('🧹 RESET: Database reset completed successfully');
+
+      res.json({
+        success: true,
+        message: 'Database reset completed - all data cleared and fresh habits created',
+        deleted: {
+          logs: deletedLogs.rowCount,
+          habits: deletedHabits.rowCount
+        },
+        created: {
+          habits: createdHabits.length,
+          habitsList: createdHabits
+        }
+      });
+
+    } catch (transactionError) {
+      await query('ROLLBACK');
+      throw transactionError;
+    }
+
+  } catch (error) {
+    console.error('❌ RESET: Error resetting database:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Database reset failed',
+      message: error.message
+    });
+  }
+});
+
 // Create real habits in database to match mock data
 router.post('/create-real-habits', async (req, res) => {
   try {

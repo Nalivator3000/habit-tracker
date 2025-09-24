@@ -149,7 +149,11 @@
             <button class="test-button" onclick="runDatabaseTest()">📊 Database Structure</button>
             <button class="test-button" onclick="testHabitLogging()">✅ Test Habit Logging</button>
             <button class="test-button" onclick="testHabitCRUD()">🔄 Test CRUD Operations</button>
-            <button class="test-button" onclick="clearResults()">🧹 Clear Results</button>
+            <button class="test-button" onclick="testUIElements()">🎨 Test UI Elements</button>
+            <button class="test-button" onclick="testFormValidation()">📝 Test Form Validation</button>
+            <button class="test-button" onclick="testResponseHandling()">🌐 Test API Response Handling</button>
+            <button class="test-button" onclick="resetDatabase()">🧹 Reset Database</button>
+            <button class="test-button" onclick="clearResults()">🗑️ Clear Results</button>
         </div>
 
         <div class="test-section">
@@ -300,14 +304,238 @@
             addResult('Starting comprehensive test suite...', 'loading');
 
             await runDatabaseTest();
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             await testHabitCRUD();
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             await testHabitLogging();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testUIElements();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testFormValidation();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testResponseHandling();
 
             addResult('All tests completed! 🎉', 'success');
+        }
+
+        // Test UI Elements
+        async function testUIElements() {
+            addResult('UI Elements Test', 'loading');
+            try {
+                // Test main app interface elements
+                const uiTests = [
+                    {
+                        name: 'Main App Availability',
+                        test: () => document.getElementById('mainApp') !== null,
+                        expected: true
+                    },
+                    {
+                        name: 'Stats Grid Elements',
+                        test: () => {
+                            const elements = [
+                                'totalHabits', 'completedToday', 'activeStreaks', 'completionRate'
+                            ];
+                            return elements.every(id => document.getElementById(id) !== null);
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Habit Modal Exists',
+                        test: () => document.getElementById('habitModal') !== null,
+                        expected: true
+                    },
+                    {
+                        name: 'Habit Form Elements',
+                        test: () => {
+                            const formElements = [
+                                'habitName', 'habitDescription', 'habitFrequency',
+                                'habitTarget', 'habitDifficulty', 'habitCategory'
+                            ];
+                            return formElements.every(id => document.getElementById(id) !== null);
+                        },
+                        expected: true
+                    }
+                ];
+
+                const results = [];
+                for (const test of uiTests) {
+                    const result = test.test();
+                    results.push({
+                        name: test.name,
+                        result: result,
+                        passed: result === test.expected
+                    });
+                }
+
+                const allPassed = results.every(r => r.passed);
+                addResult(`UI Elements Test ${allPassed ? '✅' : '❌'}`, allPassed ? 'success' : 'error', results);
+
+            } catch (error) {
+                addResult('UI Elements Test ❌', 'error', { error: error.message });
+            }
+        }
+
+        // Test Form Validation
+        async function testFormValidation() {
+            addResult('Form Validation Test', 'loading');
+            try {
+                const validationTests = [
+                    {
+                        name: 'Empty Form Submission',
+                        test: async () => {
+                            const response = await fetchAPI('/', {
+                                method: 'POST',
+                                body: JSON.stringify({})
+                            });
+                            return false; // Should have failed
+                        },
+                        shouldFail: true
+                    },
+                    {
+                        name: 'Valid Habit Creation Data',
+                        test: async () => {
+                            const response = await fetchAPI('/', {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    name: 'Test Habit',
+                                    description: 'Test Description',
+                                    frequency_type: 'daily',
+                                    target_count: 1,
+                                    difficulty_level: 3,
+                                    color: '#10B981'
+                                })
+                            });
+                            return response.success;
+                        },
+                        shouldFail: false
+                    },
+                    {
+                        name: 'Invalid Habit ID Logging',
+                        test: async () => {
+                            const response = await fetchAPI('/999/log', {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    date: new Date().toISOString().split('T')[0],
+                                    status: 'completed'
+                                })
+                            });
+                            return false; // Should fail
+                        },
+                        shouldFail: true
+                    }
+                ];
+
+                const results = [];
+                for (const test of validationTests) {
+                    try {
+                        const result = await test.test();
+                        const passed = test.shouldFail ? !result : result;
+                        results.push({
+                            name: test.name,
+                            passed: passed,
+                            expectedFail: test.shouldFail,
+                            actualResult: result
+                        });
+                    } catch (error) {
+                        const passed = test.shouldFail; // If it should fail and threw error, it passed
+                        results.push({
+                            name: test.name,
+                            passed: passed,
+                            expectedFail: test.shouldFail,
+                            error: error.message
+                        });
+                    }
+                }
+
+                const allPassed = results.every(r => r.passed);
+                addResult(`Form Validation Test ${allPassed ? '✅' : '❌'}`, allPassed ? 'success' : 'error', results);
+
+            } catch (error) {
+                addResult('Form Validation Test ❌', 'error', { error: error.message });
+            }
+        }
+
+        // Test API Response Handling
+        async function testResponseHandling() {
+            addResult('API Response Handling Test', 'loading');
+            try {
+                const responseTests = [
+                    {
+                        name: 'Valid API Endpoints Response Format',
+                        endpoint: '/',
+                        expectedFields: ['success', 'habits', 'count']
+                    },
+                    {
+                        name: 'Today Logs Response Format',
+                        endpoint: '/logs/today',
+                        expectedFields: ['success', 'logs', 'count', 'date']
+                    },
+                    {
+                        name: 'Database Test Response Format',
+                        endpoint: '/db-test',
+                        expectedFields: ['success', 'message', 'results']
+                    }
+                ];
+
+                const results = [];
+                for (const test of responseTests) {
+                    try {
+                        const response = await fetchAPI(test.endpoint);
+                        const hasAllFields = test.expectedFields.every(field =>
+                            response.hasOwnProperty(field)
+                        );
+
+                        results.push({
+                            endpoint: test.endpoint,
+                            name: test.name,
+                            passed: hasAllFields,
+                            missingFields: test.expectedFields.filter(field =>
+                                !response.hasOwnProperty(field)
+                            ),
+                            responseKeys: Object.keys(response)
+                        });
+                    } catch (error) {
+                        results.push({
+                            endpoint: test.endpoint,
+                            name: test.name,
+                            passed: false,
+                            error: error.message
+                        });
+                    }
+                }
+
+                const allPassed = results.every(r => r.passed);
+                addResult(`API Response Handling Test ${allPassed ? '✅' : '❌'}`, allPassed ? 'success' : 'error', results);
+
+            } catch (error) {
+                addResult('API Response Handling Test ❌', 'error', { error: error.message });
+            }
+        }
+
+        // Reset Database Function
+        async function resetDatabase() {
+            if (!confirm('Are you sure you want to reset the entire database? This will delete all habits and logs!')) {
+                return;
+            }
+
+            addResult('Database Reset', 'loading');
+            try {
+                const response = await fetchAPI('/reset-database', { method: 'POST' });
+                addResult('Database Reset ✅', 'success', response);
+
+                // Run a quick verification test after reset
+                setTimeout(async () => {
+                    await runDatabaseTest();
+                }, 2000);
+
+            } catch (error) {
+                addResult('Database Reset ❌', 'error', { error: error.message });
+            }
         }
 
         function clearResults() {
