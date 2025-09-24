@@ -209,8 +209,17 @@ app.use((req, res) => {
       message: `Cannot ${req.method} ${req.originalUrl}`,
     });
   } else {
-    // Serve frontend for non-API routes
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    // Check if file exists in public folder, otherwise serve index.html
+    const fs = require('fs');
+    const requestedFile = path.join(__dirname, 'public', req.path);
+
+    // If specific file exists, let express.static handle it (it should have already)
+    // If not, serve index.html for SPA routes
+    if (fs.existsSync(requestedFile) && fs.statSync(requestedFile).isFile()) {
+      res.sendFile(requestedFile);
+    } else {
+      res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    }
   }
 });
 
