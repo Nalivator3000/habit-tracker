@@ -85,62 +85,48 @@ router.post('/fix-logs-table', async (req, res) => {
   }
 });
 
-// Minimal mock data endpoint
-router.get('/', (req, res) => {
-  console.log('✅ MINIMAL: Returning hardcoded mock data');
+// Get habits from database
+router.get('/', async (req, res) => {
+  console.log('✅ DB: Getting habits from database');
 
   try {
-    const mockHabits = [
-      {
-        id: 1,
-        name: 'Morning Exercise',
-        description: 'Daily morning workout',
-        color: '#10B981',
-        frequency_type: 'daily',
-        target_count: 1,
-        difficulty_level: 3,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: 2,
-        name: 'Read Books',
-        description: 'Read for 30 minutes',
-        color: '#3B82F6',
-        frequency_type: 'daily',
-        target_count: 1,
-        difficulty_level: 2,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: 3,
-        name: 'Drink Water',
-        description: 'Stay hydrated throughout the day',
-        color: '#F59E0B',
-        frequency_type: 'daily',
-        target_count: 8,
-        difficulty_level: 1,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ];
+    const { query } = require('../config/database');
+    const userId = 3; // Hardcoded user ID
+
+    // Get habits from database
+    const result = await query(`
+      SELECT * FROM habits
+      WHERE user_id = $1 AND is_active = true
+      ORDER BY created_at ASC
+    `, [userId]);
+
+    const habits = result.rows;
+    console.log('✅ DB: Found', habits.length, 'habits in database');
+
+    // If no habits exist, try to create them first
+    if (habits.length === 0) {
+      console.log('🔧 DB: No habits found, need to create them first');
+      return res.json({
+        success: false,
+        error: 'No habits found',
+        message: 'Please call /create-real-habits first',
+        habits: [],
+        count: 0
+      });
+    }
 
     res.json({
       success: true,
-      habits: mockHabits,
-      count: mockHabits.length,
-      message: 'Mock data - zero dependencies'
+      habits: habits,
+      count: habits.length,
+      message: 'Real database habits'
     });
 
   } catch (error) {
-    console.error('❌ MINIMAL: Error in mock endpoint:', error);
+    console.error('❌ DB: Error getting habits from database:', error);
     res.status(500).json({
       success: false,
-      error: 'Minimal endpoint failed',
+      error: 'Database error while fetching habits',
       message: error.message
     });
   }
@@ -185,6 +171,93 @@ router.get('/logs/today', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Database error while fetching today logs',
+      message: error.message
+    });
+  }
+});
+
+// Create real habits in database to match mock data
+router.post('/create-real-habits', async (req, res) => {
+  try {
+    console.log('🔧 CREATING: Real habits in database...');
+    const { query } = require('../config/database');
+
+    const mockHabits = [
+      {
+        id: 1,
+        name: 'Morning Exercise',
+        description: 'Daily morning workout',
+        color: '#10B981',
+        frequency_type: 'daily',
+        target_count: 1,
+        difficulty_level: 3
+      },
+      {
+        id: 2,
+        name: 'Read Books',
+        description: 'Read for 30 minutes',
+        color: '#3B82F6',
+        frequency_type: 'daily',
+        target_count: 1,
+        difficulty_level: 2
+      },
+      {
+        id: 3,
+        name: 'Drink Water',
+        description: 'Stay hydrated throughout the day',
+        color: '#F59E0B',
+        frequency_type: 'daily',
+        target_count: 8,
+        difficulty_level: 1
+      }
+    ];
+
+    const results = [];
+
+    for (const habit of mockHabits) {
+      // Check if habit already exists
+      const existingHabit = await query('SELECT id FROM habits WHERE id = $1', [habit.id]);
+
+      if (existingHabit.rows.length === 0) {
+        // Insert habit with specific ID
+        const result = await query(`
+          INSERT INTO habits (
+            id, user_id, name, description, color, frequency_type,
+            target_count, difficulty_level, is_active, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+          RETURNING *
+        `, [
+          habit.id,
+          3, // Hardcoded user ID
+          habit.name,
+          habit.description,
+          habit.color,
+          habit.frequency_type,
+          habit.target_count,
+          habit.difficulty_level,
+          true
+        ]);
+
+        results.push(result.rows[0]);
+        console.log('✅ Created habit:', habit.name, 'with ID:', habit.id);
+      } else {
+        console.log('ℹ️ Habit already exists:', habit.name, 'with ID:', habit.id);
+        results.push({ id: habit.id, name: habit.name, status: 'already_exists' });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Real habits created in database',
+      habits: results,
+      count: results.length
+    });
+
+  } catch (error) {
+    console.error('❌ Create real habits error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create real habits',
       message: error.message
     });
   }
