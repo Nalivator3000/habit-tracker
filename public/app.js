@@ -369,6 +369,9 @@ class HabitTrackerApp {
     // Utility methods
     async fetchAPI(endpoint, options = {}) {
         const url = this.apiBase + endpoint;
+        console.log('🔍 fetchAPI: Making request to:', url);
+        console.log('🔍 fetchAPI: Options:', options);
+
         const defaultOptions = {
             headers: {
                 'Content-Type': 'application/json',
@@ -376,21 +379,42 @@ class HabitTrackerApp {
             }
         };
 
-        const response = await fetch(url, { ...defaultOptions, ...options });
-        return await response.json();
+        try {
+            const response = await fetch(url, { ...defaultOptions, ...options });
+            console.log('🔍 fetchAPI: Response status:', response.status, response.statusText);
+
+            if (!response.ok) {
+                console.error('🔍 fetchAPI: Response not OK:', response.status, response.statusText);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log('🔍 fetchAPI: Response data:', data);
+            return data;
+        } catch (error) {
+            console.error('🔍 fetchAPI: ERROR:', error);
+            throw error;
+        }
     }
 
     showMessage(containerId, message, type = 'info') {
+        console.log('🔍 showMessage: Showing message in', containerId, ':', message, '(type:', type, ')');
         const container = document.getElementById(containerId);
+        console.log('🔍 showMessage: Container found:', container);
+
         const alertClass = type === 'error' ? 'alert-error' :
                           type === 'success' ? 'alert-success' :
                           'alert-info';
 
-        container.innerHTML = `
-            <div class="alert ${alertClass}">
-                ${message}
-            </div>
-        `;
+        if (container) {
+            container.innerHTML = `
+                <div class="alert ${alertClass}">
+                    ${message}
+                </div>
+            `;
+        } else {
+            console.error('🔍 showMessage: Container not found:', containerId);
+        }
 
         // Auto-hide success messages
         if (type === 'success') {
