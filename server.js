@@ -241,6 +241,8 @@ app.get('/test-db-interface', (req, res) => {
             <button class="test-button" onclick="testHabitLogging()">✅ Test Habit Logging</button>
             <button class="test-button" onclick="testUndoFunctionality()">↶ Test Undo Functionality</button>
             <button class="test-button" onclick="testDataPersistence()">💾 Test Data Persistence</button>
+            <button class="test-button" onclick="testUIElements()">🎨 Test UI Elements</button>
+            <button class="test-button" onclick="testFormValidation()">📝 Test Form Validation</button>
             <button class="test-button" onclick="testHabitCRUD()">🔄 Test CRUD Operations</button>
             <button class="test-button" onclick="resetDatabase()">🧹 Reset Database</button>
             <button class="test-button" onclick="clearResults()">🗑️ Clear Results</button>
@@ -438,6 +440,149 @@ app.get('/test-db-interface', (req, res) => {
             }
         }
 
+        async function testUIElements() {
+            addResult('UI Elements Test', 'loading');
+            try {
+                const uiTests = [
+                    {
+                        name: 'Testing Interface Container',
+                        test: () => document.querySelector('.container') !== null,
+                        expected: true
+                    },
+                    {
+                        name: 'Test Results Area',
+                        test: () => document.getElementById('results') !== null,
+                        expected: true
+                    },
+                    {
+                        name: 'Test Buttons Available',
+                        test: () => {
+                            const buttons = document.querySelectorAll('.test-button');
+                            return buttons.length >= 5;
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'API Base Configuration',
+                        test: () => {
+                            return typeof API_BASE !== 'undefined' && API_BASE === '/api/habits';
+                        },
+                        expected: true
+                    }
+                ];
+
+                const results = [];
+                for (const test of uiTests) {
+                    const result = test.test();
+                    results.push({
+                        name: test.name,
+                        result: result,
+                        passed: result === test.expected
+                    });
+                }
+
+                const allPassed = results.every(r => r.passed);
+                addResult(\`UI Elements Test \${allPassed ? '✅' : '❌'}\`, allPassed ? 'success' : 'error', results);
+
+            } catch (error) {
+                addResult('UI Elements Test ❌', 'error', { error: error.message });
+            }
+        }
+
+        async function testFormValidation() {
+            addResult('Form Validation Test', 'loading');
+            try {
+                const validationTests = [
+                    {
+                        name: 'Empty Form Submission',
+                        test: async () => {
+                            try {
+                                const response = await fetchAPI('/', {
+                                    method: 'POST',
+                                    body: JSON.stringify({})
+                                });
+                                return false; // If we get here, it didn't fail as expected
+                            } catch (error) {
+                                return error.message.includes('400') || error.message.includes('Validation');
+                            }
+                        },
+                        shouldFail: false
+                    },
+                    {
+                        name: 'Valid Habit Creation Data',
+                        test: async () => {
+                            try {
+                                const response = await fetchAPI('/', {
+                                    method: 'POST',
+                                    body: JSON.stringify({
+                                        name: 'Test Habit ' + Date.now(),
+                                        description: 'Test Description',
+                                        frequency_type: 'daily',
+                                        target_count: 1,
+                                        difficulty_level: 3,
+                                        color: '#10B981'
+                                    })
+                                });
+                                return response.success;
+                            } catch (error) {
+                                console.error('Valid habit creation failed:', error);
+                                return false;
+                            }
+                        },
+                        shouldFail: false
+                    },
+                    {
+                        name: 'Invalid Habit ID Logging',
+                        test: async () => {
+                            try {
+                                const response = await fetchAPI('/999/log', {
+                                    method: 'POST',
+                                    body: JSON.stringify({
+                                        date: new Date().toISOString().split('T')[0],
+                                        status: 'completed'
+                                    })
+                                });
+                                return false;
+                            } catch (error) {
+                                return error.message.includes('foreign key') ||
+                                       error.message.includes('violates') ||
+                                       error.message.includes('500');
+                            }
+                        },
+                        shouldFail: false
+                    }
+                ];
+
+                const results = [];
+                for (const test of validationTests) {
+                    try {
+                        const result = await test.test();
+                        const passed = test.shouldFail ? !result : result;
+                        results.push({
+                            name: test.name,
+                            passed: passed,
+                            expectedFail: test.shouldFail,
+                            actualResult: result
+                        });
+                    } catch (error) {
+                        const passed = test.shouldFail;
+                        results.push({
+                            name: test.name,
+                            passed: passed,
+                            expectedFail: test.shouldFail,
+                            error: error.message
+                        });
+                    }
+                }
+
+                const allPassed = results.every(r => r.passed);
+                addResult(\`Form Validation Test \${allPassed ? '✅' : '❌'}\`, allPassed ? 'success' : 'error', results);
+
+            } catch (error) {
+                addResult('Form Validation Test ❌', 'error', { error: error.message });
+            }
+        }
+
         async function testHabitCRUD() {
             addResult('CRUD Operations Test', 'loading');
             try {
@@ -467,13 +612,17 @@ app.get('/test-db-interface', (req, res) => {
             testResults = [];
             addResult('Starting comprehensive test suite...', 'loading');
             await runDatabaseTest();
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testUIElements();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testFormValidation();
+            await new Promise(resolve => setTimeout(resolve, 500));
             await testHabitCRUD();
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 500));
             await testHabitLogging();
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 500));
             await testUndoFunctionality();
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 500));
             await testDataPersistence();
             addResult('All tests completed! 🎉', 'success');
         }
