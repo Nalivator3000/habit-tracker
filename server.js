@@ -243,6 +243,7 @@ app.get('/test-db-interface', (req, res) => {
             <button class="test-button" onclick="testDataPersistence()">💾 Test Data Persistence</button>
             <button class="test-button" onclick="testUIElements()">🎨 Test UI Elements</button>
             <button class="test-button" onclick="testFormValidation()">📝 Test Form Validation</button>
+            <button class="test-button" onclick="testFrequencySystem()">📅 Test Frequency System</button>
             <button class="test-button" onclick="testHabitCRUD()">🔄 Test CRUD Operations</button>
             <button class="test-button" onclick="resetDatabase()">🧹 Reset Database</button>
             <button class="test-button" onclick="clearResults()">🗑️ Clear Results</button>
@@ -583,6 +584,109 @@ app.get('/test-db-interface', (req, res) => {
             }
         }
 
+        async function testFrequencySystem() {
+            addResult('Frequency System Test', 'loading');
+            try {
+                // First update the database schema
+                addResult('Step 1: Updating database schema...', 'loading');
+                const schemaResponse = await fetchAPI('/update-frequency-schema', { method: 'POST' });
+
+                if (!schemaResponse.success) {
+                    addResult('Frequency System Test ❌', 'error', {
+                        error: 'Schema update failed',
+                        details: schemaResponse
+                    });
+                    return;
+                }
+
+                addResult('Step 1: Schema updated ✅', 'success', {
+                    newColumns: schemaResponse.newColumns
+                });
+
+                // Test different frequency types
+                const frequencyTests = [
+                    {
+                        name: 'Daily Habit with Multiple Times',
+                        data: {
+                            name: 'Drink Water ' + Date.now(),
+                            frequency_type: 'daily',
+                            target_count: 3,
+                            frequency_value: 3
+                        }
+                    },
+                    {
+                        name: 'Every N Days Habit',
+                        data: {
+                            name: 'Exercise ' + Date.now(),
+                            frequency_type: 'every_n_days',
+                            frequency_value: 3,
+                            target_count: 1
+                        }
+                    },
+                    {
+                        name: 'Weekly Habit',
+                        data: {
+                            name: 'Review Week ' + Date.now(),
+                            frequency_type: 'weekly',
+                            frequency_value: 1,
+                            target_count: 1
+                        }
+                    },
+                    {
+                        name: 'Monthly Habit',
+                        data: {
+                            name: 'Pay Bills ' + Date.now(),
+                            frequency_type: 'monthly',
+                            frequency_value: 1, // 1st of month
+                            target_count: 1
+                        }
+                    },
+                    {
+                        name: 'Schedule-based Habit',
+                        data: {
+                            name: 'Team Meeting ' + Date.now(),
+                            frequency_type: 'schedule',
+                            schedule_dates: ['2025-10-01', '2025-10-15'],
+                            target_count: 1
+                        }
+                    }
+                ];
+
+                const results = [];
+                for (const test of frequencyTests) {
+                    try {
+                        const response = await fetchAPI('/', {
+                            method: 'POST',
+                            body: JSON.stringify(test.data)
+                        });
+
+                        results.push({
+                            name: test.name,
+                            passed: response.success,
+                            data: response.success ? response.habit : response,
+                            frequency_type: test.data.frequency_type
+                        });
+                    } catch (error) {
+                        results.push({
+                            name: test.name,
+                            passed: false,
+                            error: error.message
+                        });
+                    }
+                }
+
+                const allPassed = results.every(r => r.passed);
+                addResult(\`Frequency System Test \${allPassed ? '✅' : '❌'}\`, allPassed ? 'success' : 'error', {
+                    message: 'Advanced frequency system implementation test',
+                    results: results,
+                    schemaUpdate: schemaResponse
+                });
+
+            } catch (error) {
+                addResult('Frequency System Test ❌', 'error', { error: error.message });
+            }
+        }
+
         async function testHabitCRUD() {
             addResult('CRUD Operations Test', 'loading');
             try {
@@ -617,6 +721,8 @@ app.get('/test-db-interface', (req, res) => {
             await new Promise(resolve => setTimeout(resolve, 500));
             await testFormValidation();
             await new Promise(resolve => setTimeout(resolve, 500));
+            await testFrequencySystem();
+            await new Promise(resolve => setTimeout(resolve, 1000)); // More time for schema updates
             await testHabitCRUD();
             await new Promise(resolve => setTimeout(resolve, 500));
             await testHabitLogging();

@@ -152,6 +152,8 @@
             <button class="test-button" onclick="testUIElements()">🎨 Test UI Elements</button>
             <button class="test-button" onclick="testFormValidation()">📝 Test Form Validation</button>
             <button class="test-button" onclick="testResponseHandling()">🌐 Test API Response Handling</button>
+            <button class="test-button" onclick="testFrequencySystem()">📅 Test Frequency System</button>
+            <button class="test-button" onclick="testDatabaseMigration()">🔄 Test Schema Migration</button>
             <button class="test-button" onclick="resetDatabase()">🧹 Reset Database</button>
             <button class="test-button" onclick="clearResults()">🗑️ Clear Results</button>
         </div>
@@ -319,6 +321,12 @@
             await new Promise(resolve => setTimeout(resolve, 500));
 
             await testResponseHandling();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testFrequencySystem();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testDatabaseMigration();
 
             addResult('All tests completed! 🎉', 'success');
         }
@@ -552,6 +560,223 @@
         function clearResults() {
             testResults = [];
             renderResults();
+        }
+
+        // Test Database Migration for Frequency System
+        async function testDatabaseMigration() {
+            addResult('Database Migration Test', 'loading');
+            try {
+                // Test the schema migration endpoint
+                const response = await fetchAPI('/update-frequency-schema', {
+                    method: 'POST'
+                });
+
+                addResult('Database Migration Test ✅', 'success', response);
+            } catch (error) {
+                addResult('Database Migration Test ❌', 'error', { error: error.message });
+            }
+        }
+
+        // Test Frequency System
+        async function testFrequencySystem() {
+            addResult('Frequency System Test', 'loading');
+
+            try {
+                // Test data for different frequency types
+                const frequencyTestData = [
+                    {
+                        name: 'Daily 3x Test',
+                        description: 'Daily habit 3 times per day',
+                        frequency_type: 'daily',
+                        target_count: 3,
+                        difficulty_level: 3,
+                        color: '#10B981'
+                    },
+                    {
+                        name: 'Every 3 Days Test',
+                        description: 'Every 3 days habit',
+                        frequency_type: 'every_n_days',
+                        frequency_value: 3,
+                        target_count: 1,
+                        difficulty_level: 2,
+                        color: '#3B82F6'
+                    },
+                    {
+                        name: 'Weekly Test',
+                        description: 'Weekly habit',
+                        frequency_type: 'weekly',
+                        target_count: 1,
+                        difficulty_level: 4,
+                        color: '#F59E0B'
+                    },
+                    {
+                        name: 'Monthly Test',
+                        description: 'Monthly on 15th',
+                        frequency_type: 'monthly',
+                        frequency_value: 15,
+                        target_count: 1,
+                        difficulty_level: 5,
+                        color: '#EF4444'
+                    },
+                    {
+                        name: 'Yearly Test',
+                        description: 'Yearly on Jan 1',
+                        frequency_type: 'yearly',
+                        schedule_dates: ['01-01'],
+                        target_count: 1,
+                        difficulty_level: 1,
+                        color: '#8B5CF6'
+                    },
+                    {
+                        name: 'Schedule Test',
+                        description: 'Custom schedule habit',
+                        frequency_type: 'schedule',
+                        schedule_dates: ['2024-01-01', '2024-01-15', '2024-02-01'],
+                        target_count: 1,
+                        difficulty_level: 3,
+                        color: '#EC4899'
+                    }
+                ];
+
+                const results = [];
+
+                // Test creating habits with different frequency types
+                for (const habitData of frequencyTestData) {
+                    try {
+                        const response = await fetchAPI('/', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                ...habitData,
+                                name: habitData.name + ' ' + Date.now() // Make unique
+                            })
+                        });
+
+                        results.push({
+                            frequency_type: habitData.frequency_type,
+                            name: habitData.name,
+                            created: response.success,
+                            response: response
+                        });
+
+                        // Small delay between requests
+                        await new Promise(resolve => setTimeout(resolve, 100));
+
+                    } catch (error) {
+                        results.push({
+                            frequency_type: habitData.frequency_type,
+                            name: habitData.name,
+                            created: false,
+                            error: error.message
+                        });
+                    }
+                }
+
+                // Test next due date calculations
+                addResult('Frequency Habit Creation ✅', 'success', {
+                    totalTests: frequencyTestData.length,
+                    successful: results.filter(r => r.created).length,
+                    failed: results.filter(r => !r.created).length,
+                    results: results
+                });
+
+                // Test frequency validation
+                await testFrequencyValidation();
+
+            } catch (error) {
+                addResult('Frequency System Test ❌', 'error', { error: error.message });
+            }
+        }
+
+        // Test frequency validation rules
+        async function testFrequencyValidation() {
+            addResult('Frequency Validation Test', 'loading');
+
+            try {
+                const validationTests = [
+                    {
+                        name: 'Invalid Frequency Type',
+                        data: {
+                            name: 'Invalid Test',
+                            frequency_type: 'invalid_type'
+                        },
+                        shouldFail: true
+                    },
+                    {
+                        name: 'Every N Days without Value',
+                        data: {
+                            name: 'Every N Test',
+                            frequency_type: 'every_n_days'
+                            // Missing frequency_value
+                        },
+                        shouldFail: true
+                    },
+                    {
+                        name: 'Monthly without Day',
+                        data: {
+                            name: 'Monthly Test',
+                            frequency_type: 'monthly'
+                            // Missing frequency_value for day
+                        },
+                        shouldFail: true
+                    },
+                    {
+                        name: 'Schedule without Dates',
+                        data: {
+                            name: 'Schedule Test',
+                            frequency_type: 'schedule',
+                            schedule_dates: []
+                        },
+                        shouldFail: true
+                    },
+                    {
+                        name: 'Valid Daily Habit',
+                        data: {
+                            name: 'Valid Daily Test ' + Date.now(),
+                            frequency_type: 'daily',
+                            target_count: 1
+                        },
+                        shouldFail: false
+                    }
+                ];
+
+                const results = [];
+                for (const test of validationTests) {
+                    try {
+                        const response = await fetchAPI('/', {
+                            method: 'POST',
+                            body: JSON.stringify(test.data)
+                        });
+
+                        // If we got here and it should fail, that's incorrect
+                        results.push({
+                            name: test.name,
+                            shouldFail: test.shouldFail,
+                            actuallyFailed: false,
+                            passed: !test.shouldFail,
+                            response: response
+                        });
+
+                    } catch (error) {
+                        // If it failed and should fail, that's correct
+                        results.push({
+                            name: test.name,
+                            shouldFail: test.shouldFail,
+                            actuallyFailed: true,
+                            passed: test.shouldFail,
+                            error: error.message
+                        });
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                const allPassed = results.every(r => r.passed);
+                addResult(`Frequency Validation Test ${allPassed ? '✅' : '❌'}`,
+                         allPassed ? 'success' : 'error', results);
+
+            } catch (error) {
+                addResult('Frequency Validation Test ❌', 'error', { error: error.message });
+            }
         }
 
         // Initialize

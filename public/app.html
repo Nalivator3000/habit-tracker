@@ -401,14 +401,39 @@
                 <div class="form-group">
                     <label>Frequency Type *</label>
                     <select id="habitFrequency" required>
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
+                        <option value="daily">Daily (Every day)</option>
+                        <option value="every_n_days">Every N days</option>
+                        <option value="weekly">Weekly (Once per week)</option>
+                        <option value="schedule">Custom Schedule</option>
+                        <option value="monthly">Monthly (Once per month)</option>
+                        <option value="yearly">Yearly (Once per year)</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Target Count</label>
-                    <input type="number" id="habitTarget" value="1" min="1">
+
+                <!-- Frequency Value (for every_n_days, monthly day, etc.) -->
+                <div class="form-group" id="frequencyValueGroup" style="display: none;">
+                    <label id="frequencyValueLabel">Interval (days)</label>
+                    <input type="number" id="habitFrequencyValue" value="1" min="1" max="365">
+                    <small id="frequencyValueHelp" style="color: #666; font-size: 0.8rem;"></small>
+                </div>
+
+                <!-- Target Count (for daily habits) -->
+                <div class="form-group" id="targetCountGroup">
+                    <label>Times per day</label>
+                    <input type="number" id="habitTarget" value="1" min="1" max="20">
+                    <small style="color: #666; font-size: 0.8rem;">For daily habits: how many times per day to complete</small>
+                </div>
+
+                <!-- Schedule Picker (for custom schedule) -->
+                <div class="form-group" id="scheduleGroup" style="display: none;">
+                    <label>Schedule Dates</label>
+                    <div id="schedulePicker" style="margin: 0.5rem 0;">
+                        <input type="text" id="scheduleInput" placeholder="Select dates..." readonly>
+                        <div id="calendarContainer" style="display: none; border: 1px solid #ddd; border-radius: 4px; padding: 1rem; margin-top: 0.5rem; background: white;">
+                            <!-- Simple calendar will be generated here -->
+                        </div>
+                    </div>
+                    <small style="color: #666; font-size: 0.8rem;">Click to add/remove dates from schedule</small>
                 </div>
                 <div class="form-group">
                     <label>Difficulty Level (1-5)</label>

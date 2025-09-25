@@ -123,6 +123,98 @@ router.get('/db-test', async (req, res) => {
   }
 });
 
+// Update database schema for frequency system
+router.post('/update-frequency-schema', async (req, res) => {
+  try {
+    console.log('🔧 SCHEMA: Updating database schema for frequency system...');
+    const { query } = require('../config/database');
+
+    // Start transaction
+    await query('BEGIN');
+
+    try {
+      // Check current table structure
+      const tableCheck = await query(`
+        SELECT column_name, data_type, is_nullable
+        FROM information_schema.columns
+        WHERE table_name = 'habits'
+        ORDER BY ordinal_position
+      `);
+
+      console.log('📋 Current habits structure:', tableCheck.rows);
+
+      // Add new columns if they don't exist
+      const columns = tableCheck.rows.map(row => row.column_name);
+
+      if (!columns.includes('frequency_value')) {
+        await query('ALTER TABLE habits ADD COLUMN frequency_value INTEGER DEFAULT 1');
+        console.log('✅ Added frequency_value column');
+      }
+
+      if (!columns.includes('schedule_dates')) {
+        await query('ALTER TABLE habits ADD COLUMN schedule_dates JSONB DEFAULT \'[]\'');
+        console.log('✅ Added schedule_dates column');
+      }
+
+      if (!columns.includes('next_due_date')) {
+        await query('ALTER TABLE habits ADD COLUMN next_due_date DATE');
+        console.log('✅ Added next_due_date column');
+      }
+
+      if (!columns.includes('last_reset_date')) {
+        await query('ALTER TABLE habits ADD COLUMN last_reset_date DATE DEFAULT CURRENT_DATE');
+        console.log('✅ Added last_reset_date column');
+      }
+
+      // Update existing habits to have proper frequency values
+      await query(`
+        UPDATE habits
+        SET
+          frequency_value = CASE
+            WHEN frequency_type = 'daily' THEN COALESCE(target_count, 1)
+            WHEN frequency_type = 'weekly' THEN 1
+            WHEN frequency_type = 'monthly' THEN 1
+            ELSE 1
+          END,
+          last_reset_date = CURRENT_DATE
+        WHERE frequency_value IS NULL
+      `);
+      console.log('✅ Updated existing habits with frequency values');
+
+      // Check final structure
+      const finalCheck = await query(`
+        SELECT column_name, data_type, is_nullable
+        FROM information_schema.columns
+        WHERE table_name = 'habits'
+        ORDER BY ordinal_position
+      `);
+
+      // Commit transaction
+      await query('COMMIT');
+
+      res.json({
+        success: true,
+        message: 'Frequency system schema updated successfully',
+        before: tableCheck.rows,
+        after: finalCheck.rows,
+        newColumns: ['frequency_value', 'schedule_dates', 'next_due_date', 'last_reset_date']
+      });
+
+    } catch (transactionError) {
+      await query('ROLLBACK');
+      throw transactionError;
+    }
+
+  } catch (error) {
+    console.error('❌ Schema update error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update frequency system schema',
+      message: error.message
+    });
+  }
+});
+
 // Fix habit_logs table structure
 router.post('/fix-logs-table', async (req, res) => {
   try {
@@ -552,7 +644,10 @@ router.post('/:habitId/log', async (req, res) => {
 // Create new habit endpoint - POST /habits (without ID)
 router.post('/', async (req, res) => {
   console.log('✅ DB: Create new habit endpoint hit');
-  const { name, description, color, frequency_type, target_count, difficulty_level, category } = req.body;
+  const {
+    name, description, color, frequency_type, target_count, difficulty_level,
+    category, frequency_value, schedule_dates
+  } = req.body;
 
   try {
     // Validate required fields
@@ -564,15 +659,49 @@ router.post('/', async (req, res) => {
       });
     }
 
-    console.log('✅ DB: Creating new habit:', { name, frequency_type, target_count });
+    console.log('✅ DB: Creating new habit:', { name, frequency_type, target_count, frequency_value, schedule_dates });
     const { query } = require('../config/database');
 
-    // Insert new habit (let database generate ID)
+    // Calculate next due date based on frequency type
+    let nextDueDate = null;
+    const today = new Date().toISOString().split('T')[0];
+
+    switch (frequency_type) {
+      case 'daily':
+        nextDueDate = today;
+        break;
+      case 'weekly':
+        nextDueDate = today;
+        break;
+      case 'every_n_days':
+        nextDueDate = today;
+        break;
+      case 'monthly':
+        const monthlyDay = parseInt(frequency_value) || 1;
+        const currentDate = new Date();
+        const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), monthlyDay);
+        if (targetDate < currentDate) {
+          targetDate.setMonth(targetDate.getMonth() + 1);
+        }
+        nextDueDate = targetDate.toISOString().split('T')[0];
+        break;
+      case 'schedule':
+      case 'yearly':
+        if (schedule_dates && schedule_dates.length > 0) {
+          nextDueDate = schedule_dates[0];
+        }
+        break;
+      default:
+        nextDueDate = today;
+    }
+
+    // Insert new habit with frequency data
     const result = await query(`
       INSERT INTO habits (
-        user_id, name, description, color, frequency_type,
-        target_count, difficulty_level, is_archived, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        user_id, name, description, color, frequency_type, target_count,
+        difficulty_level, frequency_value, schedule_dates, next_due_date,
+        last_reset_date, is_archived, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
       RETURNING *
     `, [
       3, // Hardcoded user ID
@@ -582,6 +711,10 @@ router.post('/', async (req, res) => {
       frequency_type || 'daily',
       parseInt(target_count) || 1,
       parseInt(difficulty_level) || 3,
+      parseInt(frequency_value) || 1,
+      JSON.stringify(schedule_dates || []),
+      nextDueDate,
+      today,
       false
     ]);
 

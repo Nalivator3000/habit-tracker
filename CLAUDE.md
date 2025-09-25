@@ -108,6 +108,48 @@ CREATE TABLE habit_logs (
 5. **Statistics Calculation** - Точные статистики без переполнения
 6. **Error Handling** - Подробная обработка ошибок
 7. **Undo Functionality** - Возможность отменить выполненные задачи
+8. **Advanced Frequency System** - Сложная система регулярности привычек
+
+## Frequency System Architecture
+
+### Frequency Types:
+1. **Daily** - каждый день
+   - `frequency_type: 'daily'`
+   - `target_count: N` - количество раз в день
+   - Multiple instances: "Task x1", "Task x2", etc.
+
+2. **Every N Days** - раз в N дней
+   - `frequency_type: 'every_n_days'`
+   - `frequency_value: N` - интервал в днях
+   - Next due calculation based on last completion
+
+3. **Weekly** - раз в неделю
+   - `frequency_type: 'weekly'`
+   - Shows in daily view, no penalty until Sunday
+   - Weekly reset cycle
+
+4. **Schedule-based** - по расписанию
+   - `frequency_type: 'schedule'`
+   - `schedule_dates: [...]` - выбранные даты
+   - Calendar picker interface
+
+5. **Monthly** - раз в месяц
+   - `frequency_type: 'monthly'`
+   - `frequency_value: day_of_month` (1-31)
+   - Monthly reset cycle
+
+6. **Yearly** - раз в год
+   - `frequency_type: 'yearly'`
+   - `schedule_dates: ['MM-DD']` - месяц и день
+   - Annual reset cycle
+
+### Database Schema Updates:
+```sql
+ALTER TABLE habits ADD COLUMN frequency_value INTEGER DEFAULT 1;
+ALTER TABLE habits ADD COLUMN schedule_dates JSONB DEFAULT '[]';
+ALTER TABLE habits ADD COLUMN next_due_date DATE;
+ALTER TABLE habits ADD COLUMN last_reset_date DATE;
+```
 
 ## Development Guidelines
 

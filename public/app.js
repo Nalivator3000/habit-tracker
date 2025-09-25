@@ -46,6 +46,11 @@ class HabitTrackerApp {
             document.getElementById('difficultyValue').textContent = e.target.value;
         });
 
+        // Frequency type change handler
+        document.getElementById('habitFrequency').addEventListener('change', (e) => {
+            this.handleFrequencyChange(e.target.value);
+        });
+
         // Color picker
         document.querySelectorAll('.color-option').forEach(option => {
             option.addEventListener('click', () => {
@@ -169,15 +174,40 @@ class HabitTrackerApp {
 
     // Habit management
     async saveHabit() {
+        const frequencyType = document.getElementById('habitFrequency').value;
         const habitData = {
             name: document.getElementById('habitName').value,
             description: document.getElementById('habitDescription').value,
-            frequency_type: document.getElementById('habitFrequency').value,
+            frequency_type: frequencyType,
             target_count: parseInt(document.getElementById('habitTarget').value),
             difficulty_level: parseInt(document.getElementById('habitDifficulty').value),
             category: document.getElementById('habitCategory').value,
             color: this.selectedColor
         };
+
+        // Add frequency-specific data
+        switch (frequencyType) {
+            case 'every_n_days':
+            case 'monthly':
+                habitData.frequency_value = parseInt(document.getElementById('habitFrequencyValue').value);
+                break;
+
+            case 'schedule':
+            case 'yearly':
+                habitData.schedule_dates = this.selectedDates || [];
+                break;
+
+            case 'weekly':
+                habitData.frequency_value = 1; // Once per week
+                break;
+
+            case 'daily':
+            default:
+                habitData.frequency_value = habitData.target_count; // For daily habits
+                break;
+        }
+
+        console.log('💾 Saving habit with data:', habitData);
 
         try {
             this.showMessage('habitModalMessage', 'Saving habit...', 'info');
@@ -295,6 +325,192 @@ class HabitTrackerApp {
         } catch (error) {
             console.error('🔄 undoHabit: Database ERROR:', error);
             alert('Failed to undo habit completion');
+        }
+    }
+
+    // Frequency Management
+
+    handleFrequencyChange(frequencyType) {
+        console.log('🔧 handleFrequencyChange:', frequencyType);
+
+        const frequencyValueGroup = document.getElementById('frequencyValueGroup');
+        const targetCountGroup = document.getElementById('targetCountGroup');
+        const scheduleGroup = document.getElementById('scheduleGroup');
+        const frequencyValueLabel = document.getElementById('frequencyValueLabel');
+        const frequencyValueHelp = document.getElementById('frequencyValueHelp');
+        const habitFrequencyValue = document.getElementById('habitFrequencyValue');
+
+        // Hide all conditional groups first
+        frequencyValueGroup.style.display = 'none';
+        scheduleGroup.style.display = 'none';
+
+        switch (frequencyType) {
+            case 'daily':
+                targetCountGroup.style.display = 'block';
+                frequencyValueLabel.textContent = 'Times per day';
+                frequencyValueHelp.textContent = 'How many times per day to complete this habit';
+                break;
+
+            case 'every_n_days':
+                targetCountGroup.style.display = 'block';
+                frequencyValueGroup.style.display = 'block';
+                frequencyValueLabel.textContent = 'Interval (days)';
+                frequencyValueHelp.textContent = 'Complete this habit every N days';
+                habitFrequencyValue.value = 2;
+                habitFrequencyValue.min = 2;
+                habitFrequencyValue.max = 365;
+                break;
+
+            case 'weekly':
+                targetCountGroup.style.display = 'block';
+                frequencyValueHelp.textContent = 'Complete once per week, shows daily but no penalty until Sunday';
+                break;
+
+            case 'schedule':
+                targetCountGroup.style.display = 'block';
+                scheduleGroup.style.display = 'block';
+                this.initializeSchedulePicker();
+                break;
+
+            case 'monthly':
+                targetCountGroup.style.display = 'block';
+                frequencyValueGroup.style.display = 'block';
+                frequencyValueLabel.textContent = 'Day of month';
+                frequencyValueHelp.textContent = 'Which day of the month (1-31)';
+                habitFrequencyValue.value = 1;
+                habitFrequencyValue.min = 1;
+                habitFrequencyValue.max = 31;
+                break;
+
+            case 'yearly':
+                targetCountGroup.style.display = 'block';
+                scheduleGroup.style.display = 'block';
+                frequencyValueHelp.textContent = 'Select specific dates for yearly habit';
+                this.initializeSchedulePicker(true); // yearly mode
+                break;
+
+            default:
+                targetCountGroup.style.display = 'block';
+        }
+    }
+
+    initializeSchedulePicker(yearlyMode = false) {
+        console.log('🗓️ Initializing schedule picker, yearly mode:', yearlyMode);
+        const scheduleInput = document.getElementById('scheduleInput');
+        const calendarContainer = document.getElementById('calendarContainer');
+
+        // Simple implementation - click to show/hide calendar
+        scheduleInput.addEventListener('click', () => {
+            if (calendarContainer.style.display === 'none') {
+                calendarContainer.style.display = 'block';
+                this.generateSimpleCalendar(yearlyMode);
+            } else {
+                calendarContainer.style.display = 'none';
+            }
+        });
+
+        // Initialize empty schedule
+        this.selectedDates = [];
+    }
+
+    generateSimpleCalendar(yearlyMode = false) {
+        const calendarContainer = document.getElementById('calendarContainer');
+        const today = new Date();
+
+        if (yearlyMode) {
+            // For yearly habits, show month/day picker
+            calendarContainer.innerHTML = `
+                <div style="margin-bottom: 1rem;">
+                    <label>Month: </label>
+                    <select id="yearlyMonth">
+                        ${Array.from({length: 12}, (_, i) => {
+                            const month = i + 1;
+                            const monthName = new Date(2025, i, 1).toLocaleString('default', { month: 'long' });
+                            return `<option value="${month.toString().padStart(2, '0')}">${monthName}</option>`;
+                        }).join('')}
+                    </select>
+
+                    <label style="margin-left: 1rem;">Day: </label>
+                    <select id="yearlyDay">
+                        ${Array.from({length: 31}, (_, i) => {
+                            const day = i + 1;
+                            return `<option value="${day.toString().padStart(2, '0')}">${day}</option>`;
+                        }).join('')}
+                    </select>
+
+                    <button type="button" onclick="app.addYearlyDate()" style="margin-left: 1rem; padding: 0.25rem 0.5rem;">Add Date</button>
+                </div>
+                <div id="selectedYearlyDates" style="font-size: 0.9rem; color: #666;"></div>
+            `;
+        } else {
+            // For schedule habits, show simple date picker
+            calendarContainer.innerHTML = `
+                <div style="margin-bottom: 1rem;">
+                    <input type="date" id="scheduleDatePicker" min="${today.toISOString().split('T')[0]}">
+                    <button type="button" onclick="app.addScheduleDate()" style="margin-left: 0.5rem; padding: 0.25rem 0.5rem;">Add Date</button>
+                </div>
+                <div id="selectedScheduleDates" style="font-size: 0.9rem; color: #666;"></div>
+            `;
+        }
+    }
+
+    addScheduleDate() {
+        const datePicker = document.getElementById('scheduleDatePicker');
+        const selectedDatesDiv = document.getElementById('selectedScheduleDates');
+        const scheduleInput = document.getElementById('scheduleInput');
+
+        if (datePicker.value) {
+            if (!this.selectedDates.includes(datePicker.value)) {
+                this.selectedDates.push(datePicker.value);
+                this.updateScheduleDisplay();
+            }
+            datePicker.value = '';
+        }
+    }
+
+    addYearlyDate() {
+        const monthSelect = document.getElementById('yearlyMonth');
+        const daySelect = document.getElementById('yearlyDay');
+        const selectedDatesDiv = document.getElementById('selectedYearlyDates');
+
+        const dateStr = `${monthSelect.value}-${daySelect.value}`;
+        if (!this.selectedDates.includes(dateStr)) {
+            this.selectedDates.push(dateStr);
+            this.updateYearlyScheduleDisplay();
+        }
+    }
+
+    updateScheduleDisplay() {
+        const selectedDatesDiv = document.getElementById('selectedScheduleDates');
+        const scheduleInput = document.getElementById('scheduleInput');
+
+        if (this.selectedDates.length > 0) {
+            const dateStrings = this.selectedDates.map(date => {
+                return new Date(date).toLocaleDateString();
+            });
+            selectedDatesDiv.innerHTML = `Selected dates: ${dateStrings.join(', ')}`;
+            scheduleInput.value = `${this.selectedDates.length} dates selected`;
+        } else {
+            selectedDatesDiv.innerHTML = 'No dates selected';
+            scheduleInput.value = '';
+        }
+    }
+
+    updateYearlyScheduleDisplay() {
+        const selectedDatesDiv = document.getElementById('selectedYearlyDates');
+        const scheduleInput = document.getElementById('scheduleInput');
+
+        if (this.selectedDates.length > 0) {
+            const dateStrings = this.selectedDates.map(date => {
+                const [month, day] = date.split('-');
+                const monthName = new Date(2025, parseInt(month) - 1, 1).toLocaleString('default', { month: 'long' });
+                return `${monthName} ${parseInt(day)}`;
+            });
+            selectedDatesDiv.innerHTML = `Selected dates: ${dateStrings.join(', ')}`;
+            scheduleInput.value = `${this.selectedDates.length} yearly dates selected`;
+        } else {
+            selectedDatesDiv.innerHTML = 'No dates selected';
+            scheduleInput.value = '';
         }
     }
 
