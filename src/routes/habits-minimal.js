@@ -555,6 +555,15 @@ router.post('/', async (req, res) => {
   const { name, description, color, frequency_type, target_count, difficulty_level, category } = req.body;
 
   try {
+    // Validate required fields
+    if (!name || name.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        message: 'Habit name is required'
+      });
+    }
+
     console.log('✅ DB: Creating new habit:', { name, frequency_type, target_count });
     const { query } = require('../config/database');
 
@@ -567,12 +576,12 @@ router.post('/', async (req, res) => {
       RETURNING *
     `, [
       3, // Hardcoded user ID
-      name,
+      name.trim(),
       description || '',
       color || '#3B82F6',
       frequency_type || 'daily',
-      target_count || 1,
-      difficulty_level || 3,
+      parseInt(target_count) || 1,
+      parseInt(difficulty_level) || 3,
       false
     ]);
 
@@ -587,11 +596,21 @@ router.post('/', async (req, res) => {
 
   } catch (error) {
     console.error('❌ DB: Error creating new habit:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Database error while creating habit',
-      message: error.message
-    });
+
+    // Check if it's a validation error
+    if (error.message.includes('not-null constraint') || error.message.includes('violates')) {
+      res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        message: 'Missing required fields for habit creation'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Database error while creating habit',
+        message: error.message
+      });
+    }
   }
 });
 
