@@ -5,13 +5,16 @@ class HabitTrackerApp {
         this.apiBase = window.location.origin + '/api';
         console.log('🚀 INIT: API Base set to:', this.apiBase);
 
-        this.token = localStorage.getItem('habitTracker_token');
+        this.token = localStorage.getItem('accessToken');
         this.user = null;
         this.habits = [];
         this.selectedColor = '#3B82F6';
         this.editingHabit = null;
 
-        // No localStorage - everything goes to database
+        // Get current user from global variable (set by app.html)
+        if (typeof currentUser !== 'undefined') {
+            this.user = currentUser;
+        }
 
         console.log('🚀 INIT: About to call init()');
         this.init();
@@ -680,19 +683,65 @@ class HabitTrackerApp {
         console.log('🔍 fetchAPI: Making request to:', url);
         console.log('🔍 fetchAPI: Options:', options);
 
+        // Use the global authenticatedFetch function if available
+        if (typeof authenticatedFetch === 'function') {
+            console.log('🔍 fetchAPI: Using authenticatedFetch');
+            try {
+                const response = await authenticatedFetch(url, options);
+
+                if (!response || !response.ok) {
+                    console.error('🔍 fetchAPI: Response not OK:', response?.status, response?.statusText);
+                    throw new Error(`HTTP ${response?.status}: ${response?.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('🔍 fetchAPI: Response data:', data);
+                return data;
+            } catch (error) {
+                console.error('🔍 fetchAPI: ERROR with authenticatedFetch:', error);
+                throw error;
+            }
+        }
+
+        // Fallback to regular fetch with auth header
         const defaultOptions = {
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        };
+
+        // Add authorization header if token exists
+        if (this.token) {
+            defaultOptions.headers['Authorization'] = `Bearer ${this.token}`;
+        }
+
+        // Merge with provided options
+        const finalOptions = {
+            ...defaultOptions,
+            ...options,
+            headers: {
+                ...defaultOptions.headers,
                 ...options.headers
             }
         };
 
         try {
-            const response = await fetch(url, { ...defaultOptions, ...options });
+            const response = await fetch(url, finalOptions);
             console.log('🔍 fetchAPI: Response status:', response.status, response.statusText);
 
             if (!response.ok) {
                 console.error('🔍 fetchAPI: Response not OK:', response.status, response.statusText);
+
+                // Handle unauthorized response
+                if (response.status === 401) {
+                    console.log('🔐 fetchAPI: Unauthorized, redirecting to login');
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
+                    localStorage.removeItem('user');
+                    window.location.href = '/auth.html';
+                    return;
+                }
+
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { authenticateToken } = require('../middleware/auth');
 
 // Minimal test endpoint
 router.get('/test', (req, res) => {
@@ -275,12 +276,12 @@ router.post('/fix-logs-table', async (req, res) => {
 });
 
 // Get habits from database
-router.get('/', async (req, res) => {
-  console.log('✅ DB: Getting habits from database');
+router.get('/', authenticateToken, async (req, res) => {
+  console.log('✅ DB: Getting habits from database for user:', req.user.id);
 
   try {
     const { query } = require('../config/database');
-    const userId = 3; // Hardcoded user ID
+    const userId = req.user.id; // Get user ID from authenticated token
 
     // Get habits from database (using is_archived instead of is_active)
     const result = await query(`
@@ -345,13 +346,13 @@ router.get('/', async (req, res) => {
 });
 
 // Today's habits endpoint - now reading from database
-router.get('/logs/today', async (req, res) => {
-  console.log('✅ DB: Today\'s habits endpoint hit');
+router.get('/logs/today', authenticateToken, async (req, res) => {
+  console.log('✅ DB: Today\'s habits endpoint hit for user:', req.user.id);
 
   try {
     const { query } = require('../config/database');
     const today = new Date().toISOString().split('T')[0];
-    const userId = 3; // Hardcoded user ID for demo
+    const userId = req.user.id; // Get user ID from authenticated token
 
     console.log('✅ DB: Fetching logs for date:', today, 'user:', userId);
 
@@ -448,7 +449,7 @@ router.post('/reset-database', async (req, res) => {
           RETURNING *
         `, [
           habit.id,
-          3, // Hardcoded user ID
+          req.user.id, // User ID from token
           habit.name,
           habit.description,
           habit.color,
@@ -547,7 +548,7 @@ router.post('/create-real-habits', async (req, res) => {
           RETURNING *
         `, [
           habit.id,
-          3, // Hardcoded user ID
+          req.user.id, // User ID from token
           habit.name,
           habit.description,
           habit.color,
@@ -583,7 +584,7 @@ router.post('/create-real-habits', async (req, res) => {
 });
 
 // Habit logging endpoint - POST /habits/:habitId/log
-router.post('/:habitId/log', async (req, res) => {
+router.post('/:habitId/log', authenticateToken, async (req, res) => {
   console.log('✅ DB: Habit logging endpoint hit');
   const { habitId } = req.params;
   const { date, status, completion_count, notes } = req.body;
@@ -607,7 +608,7 @@ router.post('/:habitId/log', async (req, res) => {
       RETURNING *
     `, [
       parseInt(habitId),
-      3, // Hardcoded user ID for demo
+      req.user.id, // User ID from token
       date || new Date().toISOString().split('T')[0],
       status || 'completed',
       completion_count || 1,
@@ -642,8 +643,8 @@ router.post('/:habitId/log', async (req, res) => {
 });
 
 // Create new habit endpoint - POST /habits (without ID)
-router.post('/', async (req, res) => {
-  console.log('✅ DB: Create new habit endpoint hit');
+router.post('/', authenticateToken, async (req, res) => {
+  console.log('✅ DB: Create new habit endpoint hit for user:', req.user.id);
   const {
     name, description, color, frequency_type, target_count, difficulty_level,
     category, frequency_value, schedule_dates
@@ -704,7 +705,7 @@ router.post('/', async (req, res) => {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
       RETURNING *
     `, [
-      3, // Hardcoded user ID
+      req.user.id, // User ID from token
       name.trim(),
       description || '',
       color || '#3B82F6',
@@ -748,7 +749,7 @@ router.post('/', async (req, res) => {
 });
 
 // Delete habit endpoint - DELETE /habits/:habitId
-router.delete('/:habitId', async (req, res) => {
+router.delete('/:habitId', authenticateToken, async (req, res) => {
   console.log('✅ DB: Delete habit endpoint hit');
   const { habitId } = req.params;
 
@@ -766,7 +767,7 @@ router.delete('/:habitId', async (req, res) => {
         DELETE FROM habit_logs
         WHERE habit_id = $1 AND user_id = $2 AND date = $3
         RETURNING *
-      `, [parseInt(habitId), 3, today]);
+      `, [parseInt(habitId), req.user.id, today]);
 
       console.log('✅ DB: Deleted', deleteLogsResult.rows.length, 'log entries for today');
 
@@ -776,7 +777,7 @@ router.delete('/:habitId', async (req, res) => {
         SET is_archived = true, updated_at = NOW()
         WHERE id = $1 AND user_id = $2
         RETURNING *
-      `, [parseInt(habitId), 3]); // Hardcoded user ID
+      `, [parseInt(habitId), req.user.id]); // User ID from token
 
       if (result.rows.length === 0) {
         await query('ROLLBACK');
@@ -816,7 +817,7 @@ router.delete('/:habitId', async (req, res) => {
 });
 
 // Undo habit completion endpoint - DELETE /habits/:habitId/log
-router.delete('/:habitId/log', async (req, res) => {
+router.delete('/:habitId/log', authenticateToken, async (req, res) => {
   console.log('🔄 UNDO: Undo habit completion endpoint hit');
   const { habitId } = req.params;
 
@@ -831,7 +832,7 @@ router.delete('/:habitId/log', async (req, res) => {
       DELETE FROM habit_logs
       WHERE habit_id = $1 AND user_id = $2 AND date = $3
       RETURNING *
-    `, [parseInt(habitId), 3, today]); // Hardcoded user ID
+    `, [parseInt(habitId), req.user.id, today]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -866,7 +867,7 @@ router.delete('/:habitId/log', async (req, res) => {
 });
 
 // Edit/Update habit endpoint - PUT /habits/:habitId
-router.put('/:habitId', async (req, res) => {
+router.put('/:habitId', authenticateToken, async (req, res) => {
   console.log('✅ DB: Update habit endpoint hit');
   const { habitId } = req.params;
   const { name, description, color, frequency_type, target_count, difficulty_level } = req.body;
@@ -882,7 +883,7 @@ router.put('/:habitId', async (req, res) => {
           target_count = $5, difficulty_level = $6, updated_at = NOW()
       WHERE id = $7 AND user_id = $8
       RETURNING *
-    `, [name, description, color, frequency_type, target_count, difficulty_level, parseInt(habitId), 3]);
+    `, [name, description, color, frequency_type, target_count, difficulty_level, parseInt(habitId), req.user.id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
