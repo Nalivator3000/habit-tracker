@@ -345,6 +345,69 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
+// Monthly logs endpoint - get logs for a specific month
+router.get('/logs/month/:year/:month', authenticateToken, async (req, res) => {
+  console.log('📅 Monthly logs endpoint hit for user:', req.user.id);
+  const { year, month } = req.params;
+
+  try {
+    const { query } = require('../config/database');
+    const userId = req.user.id;
+
+    // Validate year and month
+    const yearInt = parseInt(year);
+    const monthInt = parseInt(month);
+
+    if (isNaN(yearInt) || isNaN(monthInt) || monthInt < 1 || monthInt > 12) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid year or month parameters'
+      });
+    }
+
+    // Calculate date range for the month
+    const startDate = new Date(yearInt, monthInt - 1, 1).toISOString().split('T')[0];
+    const endDate = new Date(yearInt, monthInt, 0).toISOString().split('T')[0];
+
+    console.log('📅 Fetching logs for date range:', startDate, 'to', endDate, 'user:', userId);
+
+    // Get logs for the entire month
+    const result = await query(`
+      SELECT hl.*, h.name as habit_name, h.color as habit_color, h.target_count
+      FROM habit_logs hl
+      JOIN habits h ON hl.habit_id = h.id
+      WHERE hl.user_id = $1
+        AND hl.date >= $2
+        AND hl.date <= $3
+        AND h.is_archived = false
+      ORDER BY hl.date ASC, h.name ASC
+    `, [userId, startDate, endDate]);
+
+    console.log('📅 Found', result.rows.length, 'log entries for the month');
+
+    res.json({
+      success: true,
+      logs: result.rows,
+      count: result.rows.length,
+      period: {
+        year: yearInt,
+        month: monthInt,
+        startDate,
+        endDate
+      },
+      message: 'Monthly habit logs'
+    });
+
+  } catch (error) {
+    console.error('📅 Error fetching monthly logs:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch monthly logs',
+      message: error.message
+    });
+  }
+});
+
 // Today's habits endpoint - now reading from database
 router.get('/logs/today', authenticateToken, async (req, res) => {
   console.log('✅ DB: Today\'s habits endpoint hit for user:', req.user.id);
