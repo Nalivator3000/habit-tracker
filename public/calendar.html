@@ -276,6 +276,12 @@
             opacity: 0.5;
         }
 
+        .day-cell.not-started {
+            background: #ffffff;
+            border-color: #e5e7eb;
+            opacity: 0.3;
+        }
+
         .day-cell.today {
             border: 2px solid #667eea;
             border-color: #667eea;
@@ -495,6 +501,10 @@
                         <div class="legend-item">
                             <div class="legend-color" style="background: #ef4444;"></div>
                             <span>Missed</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #ffffff; border: 1px solid #ddd; opacity: 0.3;"></div>
+                            <span>Not started</span>
                         </div>
                         <div class="legend-item">
                             <div class="legend-color" style="background: #f3f4f6;"></div>
@@ -769,8 +779,19 @@
                                 tooltipText += ` - Partial (${habitLog.completion_count}/${habit.target_count})`;
                             }
                         } else {
-                            cellClass += ' missed';
-                            tooltipText += ' - Missed';
+                            // Check if the habit was created before this date
+                            const habitCreatedDate = new Date(habit.created_at);
+                            const habitCreatedDateStr = habitCreatedDate.toISOString().split('T')[0];
+
+                            if (dateStr >= habitCreatedDateStr) {
+                                // Only show as missed if the habit existed on this date
+                                cellClass += ' missed';
+                                tooltipText += ' - Missed';
+                            } else {
+                                // Habit didn't exist yet - show as inactive/not started
+                                cellClass += ' not-started';
+                                tooltipText += ' - Not started yet';
+                            }
                         }
                     }
 
@@ -803,10 +824,15 @@
             let bestStreak = 0;
 
             habits.forEach(habit => {
+                const habitCreatedDate = new Date(habit.created_at);
+                const habitCreatedDateStr = habitCreatedDate.toISOString().split('T')[0];
+
                 for (let day = 1; day <= daysInMonth; day++) {
                     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-                    if (date <= today) {
-                        const dateStr = date.toISOString().split('T')[0];
+                    const dateStr = date.toISOString().split('T')[0];
+
+                    // Only count days after habit was created and not in future
+                    if (date <= today && dateStr >= habitCreatedDateStr) {
                         const dayLogs = habitLogs[dateStr];
                         const habitLog = dayLogs && dayLogs[habit.id];
 
