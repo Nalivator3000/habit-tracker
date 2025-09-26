@@ -647,6 +647,14 @@
                 console.error('🔍 DEBUG: /api/habits/logs/today error:', error);
             });
 
+        // Initialize HabitTrackerApp after auth is confirmed
+        console.log('🚀 Initializing HabitTrackerApp...');
+        window.habitApp = new HabitTrackerApp();
+
+        // Set the global app reference for event handlers
+        if (typeof setApp === 'function') {
+            setApp(window.habitApp);
+        }
         } // End of initializeApp function
     </script>
     <script src="app.js"></script>

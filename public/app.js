@@ -26,6 +26,12 @@ class HabitTrackerApp {
         this.setupEventListeners();
         console.log('🚀 INIT: Event listeners set up');
 
+        // Check if we have authentication from the global context
+        if (typeof authToken !== 'undefined' && authToken) {
+            this.token = authToken;
+            console.log('🚀 INIT: Using auth token from global context');
+        }
+
         // Skip authentication - directly show main app
         this.showApp();
         console.log('🚀 INIT: App shown');
@@ -782,14 +788,24 @@ class HabitTrackerApp {
     }
 }
 
-// Initialize the app
-const app = new HabitTrackerApp();
+// App initialization is now handled by app.html after authentication
+// This ensures proper token management
 
 // Setup global event handlers for dynamic content
-window.app = app;
+let app = null; // Will be set when HabitTrackerApp is created
+window.setApp = function(appInstance) {
+    app = appInstance;
+    window.app = app;
+};
 
 // Add event delegation for dynamically created buttons
 document.addEventListener('click', function(e) {
+    // Check if app is initialized
+    if (!app) {
+        console.log('⚠️ App not initialized yet, ignoring event');
+        return;
+    }
+
     // Handle habit completion buttons
     if (e.target.matches('button[data-action="complete-habit"]')) {
         const habitId = parseInt(e.target.dataset.habitId);
