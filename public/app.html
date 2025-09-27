@@ -476,6 +476,7 @@
         // Authentication Management
         let currentUser = null;
         let authToken = null;
+        let isRedirecting = false;
 
         // Check authentication on page load
         function checkAuth() {
@@ -485,8 +486,12 @@
             const userData = localStorage.getItem('user');
 
             if (!token || !userData) {
-                console.log('🔐 No auth data found, redirecting to login');
-                window.location.href = '/auth.html';
+                console.log('🔐 No auth data found');
+                if (!isRedirecting && !window.location.pathname.includes('auth.html')) {
+                    console.log('🔐 Redirecting to login');
+                    isRedirecting = true;
+                    window.location.href = '/auth.html';
+                }
                 return false;
             }
 
@@ -504,7 +509,10 @@
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('refreshToken');
                 localStorage.removeItem('user');
-                window.location.href = '/auth.html';
+                if (!isRedirecting && !window.location.pathname.includes('auth.html')) {
+                    isRedirecting = true;
+                    window.location.href = '/auth.html';
+                }
                 return false;
             }
         }
@@ -525,8 +533,13 @@
         // API request with authentication
         async function authenticatedFetch(url, options = {}) {
             if (!authToken) {
-                console.log('🔐 No auth token, redirecting to login');
-                window.location.href = '/auth.html';
+                console.log('🔐 No auth token available');
+                // Don't redirect if we're already on auth page
+                if (!isRedirecting && !window.location.pathname.includes('auth.html')) {
+                    console.log('🔐 Redirecting to login');
+                    isRedirecting = true;
+                    window.location.href = '/auth.html';
+                }
                 return;
             }
 
@@ -559,7 +572,19 @@
                         finalOptions.headers.Authorization = `Bearer ${authToken}`;
                         return await fetch(url, finalOptions);
                     } else {
-                        window.location.href = '/auth.html';
+                        console.log('🔐 Token refresh failed, clearing tokens');
+                        // Clear invalid tokens
+                        localStorage.removeItem('accessToken');
+                        localStorage.removeItem('refreshToken');
+                        localStorage.removeItem('user');
+                        authToken = null;
+                        currentUser = null;
+
+                        // Only redirect if we're not already on auth page
+                        if (!isRedirecting && !window.location.pathname.includes('auth.html')) {
+                            isRedirecting = true;
+                            window.location.href = '/auth.html';
+                        }
                         return;
                     }
                 }
@@ -623,6 +648,7 @@
             // Make sure the authenticatedFetch function is globally available
             window.authenticatedFetch = authenticatedFetch;
             window.authToken = authToken;
+            window.isRedirecting = isRedirecting;
 
             // Initialize HabitTrackerApp after auth is confirmed
             console.log('🚀 Initializing HabitTrackerApp...');

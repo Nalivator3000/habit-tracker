@@ -713,10 +713,22 @@ class HabitTrackerApp {
                 if (!response || !response.ok) {
                     console.error('🔍 fetchAPI: Response not OK:', response?.status, response?.statusText);
 
-                    // If 401/403, try to redirect to login
+                    // If 401/403, handle authentication failure
                     if (response?.status === 401 || response?.status === 403) {
-                        console.log('🔍 fetchAPI: Authentication failed, redirecting to login');
-                        window.location.href = '/auth.html';
+                        console.log('🔍 fetchAPI: Authentication failed');
+                        // Clear invalid tokens and redirect only once
+                        localStorage.removeItem('accessToken');
+                        localStorage.removeItem('refreshToken');
+                        localStorage.removeItem('user');
+
+                        // Only redirect if we're not already on auth page and not already redirecting
+                        if (!window.location.pathname.includes('auth.html') && typeof isRedirecting !== 'undefined' && !isRedirecting) {
+                            console.log('🔍 fetchAPI: Redirecting to login');
+                            if (typeof window.isRedirecting !== 'undefined') {
+                                window.isRedirecting = true;
+                            }
+                            window.location.href = '/auth.html';
+                        }
                         return;
                     }
 
