@@ -620,41 +620,18 @@
         function initializeApp() {
             console.log('🚀 Initializing app...');
 
-            // Debug test for API connectivity
-            console.log('🔍 DEBUG: Testing API connectivity...');
+            // Make sure the authenticatedFetch function is globally available
+            window.authenticatedFetch = authenticatedFetch;
+            window.authToken = authToken;
 
-        authenticatedFetch('/api/habits')
-            .then(response => {
-                console.log('🔍 DEBUG: /api/habits response status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('🔍 DEBUG: /api/habits response data:', data);
-            })
-            .catch(error => {
-                console.error('🔍 DEBUG: /api/habits error:', error);
-            });
+            // Initialize HabitTrackerApp after auth is confirmed
+            console.log('🚀 Initializing HabitTrackerApp...');
+            window.habitApp = new HabitTrackerApp();
 
-        authenticatedFetch('/api/habits/logs/today')
-            .then(response => {
-                console.log('🔍 DEBUG: /api/habits/logs/today response status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('🔍 DEBUG: /api/habits/logs/today response data:', data);
-            })
-            .catch(error => {
-                console.error('🔍 DEBUG: /api/habits/logs/today error:', error);
-            });
-
-        // Initialize HabitTrackerApp after auth is confirmed
-        console.log('🚀 Initializing HabitTrackerApp...');
-        window.habitApp = new HabitTrackerApp();
-
-        // Set the global app reference for event handlers
-        if (typeof setApp === 'function') {
-            setApp(window.habitApp);
-        }
+            // Set the global app reference for event handlers
+            if (typeof setApp === 'function') {
+                setApp(window.habitApp);
+            }
         } // End of initializeApp function
     </script>
     <script src="app.js"></script>

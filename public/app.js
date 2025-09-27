@@ -16,6 +16,11 @@ class HabitTrackerApp {
             this.user = currentUser;
         }
 
+        // Sync with global auth token
+        if (typeof authToken !== 'undefined' && authToken) {
+            this.token = authToken;
+        }
+
         console.log('🚀 INIT: About to call init()');
         this.init();
         console.log('🚀 INIT: Constructor completed');
@@ -31,6 +36,9 @@ class HabitTrackerApp {
             this.token = authToken;
             console.log('🚀 INIT: Using auth token from global context');
         }
+
+        // Log the token status for debugging
+        console.log('🚀 INIT: Token status:', this.token ? 'Present' : 'Missing');
 
         // Skip authentication - directly show main app
         this.showApp();
@@ -692,11 +700,26 @@ class HabitTrackerApp {
         // Use the global authenticatedFetch function if available
         if (typeof authenticatedFetch === 'function') {
             console.log('🔍 fetchAPI: Using authenticatedFetch');
+
+            // Make sure we have the latest token
+            if (typeof authToken !== 'undefined' && authToken) {
+                this.token = authToken;
+                console.log('🔍 fetchAPI: Updated token from global authToken');
+            }
+
             try {
                 const response = await authenticatedFetch(url, options);
 
                 if (!response || !response.ok) {
                     console.error('🔍 fetchAPI: Response not OK:', response?.status, response?.statusText);
+
+                    // If 401/403, try to redirect to login
+                    if (response?.status === 401 || response?.status === 403) {
+                        console.log('🔍 fetchAPI: Authentication failed, redirecting to login');
+                        window.location.href = '/auth.html';
+                        return;
+                    }
+
                     throw new Error(`HTTP ${response?.status}: ${response?.statusText}`);
                 }
 
