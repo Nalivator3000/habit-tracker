@@ -100,6 +100,7 @@ class HabitTrackerApp {
             await this.loadHabits();
 
             // Only load today habits if we have habits loaded
+            console.log('🔍 loadData: Checking habits count:', this.habits?.length || 0);
             if (this.habits && this.habits.length > 0) {
                 console.log('🔍 loadData: Step 2 - Loading today habits...');
                 await this.loadTodayHabits();
@@ -107,9 +108,13 @@ class HabitTrackerApp {
                 console.log('🔍 loadData: Step 3 - Loading stats...');
                 await this.loadStats();
             } else {
-                console.log('🔍 loadData: No habits loaded, skipping today habits and stats');
+                console.log('🔍 loadData: No habits loaded, skipping today habits and loading stats only');
                 // Still render empty today habits to show proper message
                 this.renderTodayHabits([]);
+
+                // Still load stats even if no habits
+                console.log('🔍 loadData: Step 3 - Loading stats anyway...');
+                await this.loadStats();
             }
 
             console.log('🔍 loadData: All data loaded successfully');
@@ -129,11 +134,13 @@ class HabitTrackerApp {
             if (response.success) {
                 console.log('🔍 loadHabits: Success! Setting habits:', response.habits);
                 this.habits = response.habits;
+                console.log('🔍 loadHabits: Habits array length after setting:', this.habits.length);
                 console.log('🔍 loadHabits: Calling renderHabits...');
                 this.renderHabits();
                 console.log('🔍 loadHabits: renderHabits completed');
             } else {
                 console.log('🔍 loadHabits: Response not successful:', response);
+                this.habits = []; // Make sure habits is not undefined
                 this.showMessage('habitsList', 'Failed to load habits', 'error');
             }
         } catch (error) {
