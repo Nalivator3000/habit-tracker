@@ -825,15 +825,6 @@ router.delete('/:habitId', authenticateToken, async (req, res) => {
     await query('BEGIN');
 
     try {
-      // 1. Delete today's logs for this habit to fix statistics
-      const deleteLogsResult = await query(`
-        DELETE FROM habit_logs
-        WHERE habit_id = $1 AND user_id = $2 AND date = $3
-        RETURNING *
-      `, [parseInt(habitId), req.user.id, today]);
-
-      console.log('✅ DB: Deleted', deleteLogsResult.rows.length, 'log entries for today');
-
       // First check if habit exists for this user
       const checkResult = await query(`
         SELECT id, name, user_id, is_archived
@@ -871,13 +862,33 @@ router.delete('/:habitId', authenticateToken, async (req, res) => {
         });
       }
 
-      // 2. Soft delete habit - set is_archived = true
+      // 2. Delete today's logs for this habit to fix statistics
+      const deleteLogsResult = await query(`
+        DELETE FROM habit_logs
+        WHERE habit_id = $1 AND user_id = $2 AND date = $3
+        RETURNING *
+      `, [parseInt(habitId), req.user.id, today]);
+
+      console.log('✅ DB: Deleted', deleteLogsResult.rows.length, 'log entries for today');
+
+      // 3. Soft delete habit - set is_archived = true
       const result = await query(`
         UPDATE habits
         SET is_archived = true, updated_at = NOW()
         WHERE id = $1 AND user_id = $2
         RETURNING *
       `, [parseInt(habitId), req.user.id]); // User ID from token
+
+      console.log('✅ DB: Update result:', result.rows);
+
+      if (result.rows.length === 0) {
+        await query('ROLLBACK');
+        return res.status(500).json({
+          success: false,
+          error: 'Update failed',
+          message: 'Failed to archive habit'
+        });
+      }
 
       // Commit transaction
       await query('COMMIT');
