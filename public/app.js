@@ -99,15 +99,24 @@ class HabitTrackerApp {
             console.log('🔍 loadData: Step 1 - Loading habits...');
             await this.loadHabits();
 
-            console.log('🔍 loadData: Step 2 - Loading today habits...');
-            await this.loadTodayHabits();
+            // Only load today habits if we have habits loaded
+            if (this.habits && this.habits.length > 0) {
+                console.log('🔍 loadData: Step 2 - Loading today habits...');
+                await this.loadTodayHabits();
 
-            console.log('🔍 loadData: Step 3 - Loading stats...');
-            await this.loadStats();
+                console.log('🔍 loadData: Step 3 - Loading stats...');
+                await this.loadStats();
+            } else {
+                console.log('🔍 loadData: No habits loaded, skipping today habits and stats');
+                // Still render empty today habits to show proper message
+                this.renderTodayHabits([]);
+            }
 
             console.log('🔍 loadData: All data loaded successfully');
         } catch (error) {
             console.error('🔍 loadData: ERROR during data loading:', error);
+            // Make sure to render something even on error
+            this.renderTodayHabits([]);
         }
     }
 
@@ -632,20 +641,36 @@ class HabitTrackerApp {
         const container = document.getElementById('todayHabits');
         const today = new Date().toISOString().split('T')[0];
 
-        // Get habits that should be done today
-        const dailyHabits = this.habits.filter(h => h.frequency_type === 'daily');
-        const todayLogs = logs || [];
+        console.log('🔍 renderTodayHabits: Starting with habits:', this.habits.length, 'logs:', logs?.length || 0);
 
-        if (dailyHabits.length === 0) {
+        // Check if habits are loaded
+        if (!this.habits || this.habits.length === 0) {
+            console.log('🔍 renderTodayHabits: No habits loaded yet, showing loading message');
             container.innerHTML = `
                 <div style="text-align: center; padding: 1rem; color: #666;">
-                    <p>No daily habits configured.</p>
+                    <p>Loading habits...</p>
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = dailyHabits.map(habit => {
+        // Get habits that should be done today (for now, all habits are considered daily)
+        const todayHabits = this.habits.filter(h => !h.is_archived);
+        const todayLogs = logs || [];
+
+        console.log('🔍 renderTodayHabits: Today habits count:', todayHabits.length);
+
+        if (todayHabits.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 1rem; color: #666;">
+                    <p>No active habits configured.</p>
+                    <p><a href="#" data-action="add-habit">Add your first habit</a></p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = todayHabits.map(habit => {
             const log = todayLogs.find(l => l.habit_id === habit.id);
             const completed = log && log.status === 'completed';
 
@@ -873,8 +898,9 @@ document.addEventListener('click', function(e) {
 
     // Authentication button handlers removed for demo mode
 
-    // Handle add habit button
-    if (e.target.matches('button[data-action="add-habit"]')) {
+    // Handle add habit button or link
+    if (e.target.matches('button[data-action="add-habit"]') || e.target.matches('a[data-action="add-habit"]')) {
+        e.preventDefault();
         app.openHabitModal();
     }
 
