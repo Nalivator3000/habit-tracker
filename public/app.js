@@ -918,3 +918,90 @@ document.addEventListener('click', function(e) {
         app.closeHabitModal();
     }
 });
+
+// Mobile Touch Enhancements
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartTime = 0;
+
+// Handle touch events for swipe gestures
+document.addEventListener('touchstart', function(e) {
+    if (!app) return;
+
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchStartTime = Date.now();
+}, { passive: true });
+
+document.addEventListener('touchend', function(e) {
+    if (!app) return;
+
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const touchEndTime = Date.now();
+
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+    const deltaTime = touchEndTime - touchStartTime;
+
+    // Check if it's a swipe gesture (not too slow, not too vertical)
+    if (deltaTime < 300 && Math.abs(deltaX) > 50 && Math.abs(deltaY) < 100) {
+        const habitItem = e.target.closest('.habit-item');
+        if (habitItem) {
+            const habitId = habitItem.querySelector('[data-habit-id]')?.dataset.habitId;
+            if (habitId) {
+                if (deltaX > 0) {
+                    // Swipe right - complete habit
+                    app.logHabit(parseInt(habitId), 'completed');
+                } else {
+                    // Swipe left - skip habit
+                    app.logHabit(parseInt(habitId), 'skipped');
+                }
+            }
+        }
+    }
+}, { passive: true });
+
+// Improve button tap responsiveness on mobile
+document.addEventListener('touchstart', function(e) {
+    if (e.target.matches('.btn, .mobile-nav-item, .fab')) {
+        e.target.style.transform = 'scale(0.95)';
+    }
+}, { passive: true });
+
+document.addEventListener('touchend', function(e) {
+    if (e.target.matches('.btn, .mobile-nav-item, .fab')) {
+        setTimeout(() => {
+            e.target.style.transform = '';
+        }, 100);
+    }
+}, { passive: true });
+
+// Handle FAB clicks
+document.addEventListener('click', function(e) {
+    if (e.target.matches('.fab')) {
+        if (app) {
+            app.openHabitModal();
+        }
+    }
+});
+
+// Mobile navigation active state management
+function updateMobileNavigation() {
+    const currentPage = window.location.pathname;
+    const navItems = document.querySelectorAll('.mobile-nav-item');
+
+    navItems.forEach(item => {
+        item.classList.remove('active');
+        const href = item.getAttribute('href');
+        if (href && currentPage.includes(href.replace('/', ''))) {
+            item.classList.add('active');
+        }
+    });
+}
+
+// Update navigation on page load
+if (typeof window !== 'undefined') {
+    window.addEventListener('load', updateMobileNavigation);
+    window.addEventListener('popstate', updateMobileNavigation);
+}

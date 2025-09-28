@@ -303,26 +303,222 @@
             display: none !important;
         }
 
+        /* Mobile Navigation Bar */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(102, 126, 234, 0.2);
+            padding: 0.5rem 0;
+            z-index: 1000;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-nav-content {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #666;
+            text-decoration: none;
+            min-width: 60px;
+        }
+
+        .mobile-nav-item:hover,
+        .mobile-nav-item.active {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .mobile-nav-icon {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+        }
+
+        .mobile-nav-label {
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        /* Floating Action Button */
+        .fab {
+            display: none;
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            z-index: 999;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        /* Enhanced Mobile Styles */
         @media (max-width: 768px) {
+            body {
+                padding-bottom: 80px; /* Space for mobile nav */
+            }
+
+            .mobile-nav {
+                display: block;
+            }
+
+            .fab {
+                display: block;
+            }
+
             .main-content {
                 grid-template-columns: 1fr;
+                gap: 1rem;
+                margin-bottom: 2rem;
             }
 
             .header {
+                flex-direction: row;
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .user-info {
                 flex-direction: column;
-                gap: 1rem;
-                text-align: center;
+                gap: 0.5rem;
+                align-items: flex-end;
+            }
+
+            .user-info span {
+                font-size: 0.9rem;
+            }
+
+            .btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
             }
 
             .habit-item {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 0.5rem;
+                gap: 0.75rem;
+                padding: 1rem;
+                border-radius: 12px;
+                margin-bottom: 0.5rem;
+                position: relative;
+            }
+
+            .habit-info {
+                width: 100%;
+            }
+
+            .habit-name {
+                font-size: 1.1rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .habit-meta {
+                display: flex;
+                gap: 1rem;
+                margin-bottom: 0.5rem;
             }
 
             .habit-actions {
                 width: 100%;
-                justify-content: flex-end;
+                justify-content: space-between;
+                gap: 0.5rem;
+            }
+
+            .habit-actions .btn {
+                flex: 1;
+                padding: 0.75rem;
+                font-size: 0.85rem;
+                min-height: 44px; /* Touch target size */
+            }
+
+            .btn-small {
+                padding: 0.75rem 1rem;
+                min-height: 44px;
+            }
+
+            /* Swipe indicators */
+            .habit-item::before {
+                content: '';
+                position: absolute;
+                top: 50%;
+                right: 1rem;
+                transform: translateY(-50%);
+                width: 4px;
+                height: 20px;
+                background: rgba(102, 126, 234, 0.3);
+                border-radius: 2px;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+            .app-container {
+                padding: 0.5rem;
+            }
+
+            .header {
+                padding: 0.75rem;
+            }
+
+            .logo {
+                font-size: 1.2rem;
+            }
+
+            .card {
+                padding: 1rem;
+                border-radius: 12px;
+            }
+
+            .habit-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .habit-actions .btn {
+                width: 100%;
+            }
+
+            .mobile-nav-label {
+                display: none;
+            }
+
+            .mobile-nav-item {
+                min-width: auto;
+                padding: 0.75rem 0.5rem;
             }
         }
     </style>
@@ -660,6 +856,37 @@
             }
         } // End of initializeApp function
     </script>
+    <!-- Floating Action Button -->
+    <button class="fab" data-action="add-habit" title="Add Habit">
+        ➕
+    </button>
+
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav">
+        <div class="mobile-nav-content">
+            <a href="/app.html" class="mobile-nav-item active">
+                <div class="mobile-nav-icon">🏠</div>
+                <div class="mobile-nav-label">Home</div>
+            </a>
+            <a href="/calendar.html" class="mobile-nav-item">
+                <div class="mobile-nav-icon">📅</div>
+                <div class="mobile-nav-label">Calendar</div>
+            </a>
+            <div class="mobile-nav-item" data-action="add-habit">
+                <div class="mobile-nav-icon">➕</div>
+                <div class="mobile-nav-label">Add</div>
+            </div>
+            <a href="/db-test.html" class="mobile-nav-item">
+                <div class="mobile-nav-icon">🔧</div>
+                <div class="mobile-nav-label">Tools</div>
+            </a>
+            <div class="mobile-nav-item" data-action="logout">
+                <div class="mobile-nav-icon">👤</div>
+                <div class="mobile-nav-label">Profile</div>
+            </div>
+        </div>
+    </nav>
+
     <script src="app.js"></script>
 </body>
 </html>

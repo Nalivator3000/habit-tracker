@@ -385,7 +385,70 @@
             opacity: 1;
         }
 
+        /* Mobile Navigation Styles */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(102, 126, 234, 0.2);
+            padding: 0.5rem 0;
+            z-index: 1000;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-nav-content {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #666;
+            text-decoration: none;
+            min-width: 60px;
+        }
+
+        .mobile-nav-item:hover,
+        .mobile-nav-item.active {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .mobile-nav-icon {
+            font-size: 1.2rem;
+            margin-bottom: 0.15rem;
+        }
+
+        .mobile-nav-label {
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
         @media (max-width: 768px) {
+            body {
+                padding-bottom: 80px;
+            }
+
+            .mobile-nav {
+                display: block;
+            }
+
             .app-container {
                 padding: 0.5rem;
             }
@@ -902,5 +965,32 @@
             loadCalendarData();
         });
     </script>
+
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav">
+        <div class="mobile-nav-content">
+            <a href="/app.html" class="mobile-nav-item">
+                <div class="mobile-nav-icon">🏠</div>
+                <div class="mobile-nav-label">Home</div>
+            </a>
+            <a href="/calendar.html" class="mobile-nav-item active">
+                <div class="mobile-nav-icon">📅</div>
+                <div class="mobile-nav-label">Calendar</div>
+            </a>
+            <a href="/app.html" class="mobile-nav-item">
+                <div class="mobile-nav-icon">➕</div>
+                <div class="mobile-nav-label">Add</div>
+            </a>
+            <a href="/db-test.html" class="mobile-nav-item">
+                <div class="mobile-nav-icon">🔧</div>
+                <div class="mobile-nav-label">Tools</div>
+            </a>
+            <div class="mobile-nav-item" onclick="logout()">
+                <div class="mobile-nav-icon">👤</div>
+                <div class="mobile-nav-label">Profile</div>
+            </div>
+        </div>
+    </nav>
+
 </body>
 </html>
