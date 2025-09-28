@@ -273,6 +273,8 @@ class HabitTrackerApp {
 
         try {
             console.log('🔍 deleteHabit: Starting deletion of habit', habitId);
+            console.log('🔍 deleteHabit: Current user:', this.user);
+            console.log('🔍 deleteHabit: URL will be:', this.apiBase + `/habits/${habitId}`);
 
             const response = await this.fetchAPI(`/habits/${habitId}`, {
                 method: 'DELETE'

@@ -817,7 +817,7 @@ router.delete('/:habitId', authenticateToken, async (req, res) => {
   const { habitId } = req.params;
 
   try {
-    console.log('✅ DB: Deleting habit and today\'s logs:', habitId);
+    console.log('✅ DB: Deleting habit:', habitId, 'for user:', req.user.id);
     const { query } = require('../config/database');
     const today = new Date().toISOString().split('T')[0];
 
@@ -834,6 +834,43 @@ router.delete('/:habitId', authenticateToken, async (req, res) => {
 
       console.log('✅ DB: Deleted', deleteLogsResult.rows.length, 'log entries for today');
 
+      // First check if habit exists for this user
+      const checkResult = await query(`
+        SELECT id, name, user_id, is_archived
+        FROM habits
+        WHERE id = $1
+      `, [parseInt(habitId)]);
+
+      console.log('✅ DB: Habit check result:', checkResult.rows);
+
+      if (checkResult.rows.length === 0) {
+        await query('ROLLBACK');
+        return res.status(404).json({
+          success: false,
+          error: 'Habit not found',
+          message: 'Habit does not exist'
+        });
+      }
+
+      const habit = checkResult.rows[0];
+      if (habit.user_id !== req.user.id) {
+        await query('ROLLBACK');
+        return res.status(404).json({
+          success: false,
+          error: 'Habit not found',
+          message: 'Habit does not belong to current user'
+        });
+      }
+
+      if (habit.is_archived) {
+        await query('ROLLBACK');
+        return res.status(404).json({
+          success: false,
+          error: 'Habit already deleted',
+          message: 'Habit is already archived'
+        });
+      }
+
       // 2. Soft delete habit - set is_archived = true
       const result = await query(`
         UPDATE habits
@@ -841,15 +878,6 @@ router.delete('/:habitId', authenticateToken, async (req, res) => {
         WHERE id = $1 AND user_id = $2
         RETURNING *
       `, [parseInt(habitId), req.user.id]); // User ID from token
-
-      if (result.rows.length === 0) {
-        await query('ROLLBACK');
-        return res.status(404).json({
-          success: false,
-          error: 'Habit not found',
-          message: 'Habit not found or already deleted'
-        });
-      }
 
       // Commit transaction
       await query('COMMIT');
