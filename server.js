@@ -48,6 +48,19 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Redirect routes for better UX
+app.get('/app', (req, res) => {
+  res.redirect('/app.html');
+});
+
+app.get('/calendar', (req, res) => {
+  res.redirect('/calendar.html');
+});
+
+app.get('/auth', (req, res) => {
+  res.redirect('/auth.html');
+});
+
 // Health check endpoint with graceful database handling
 app.get('/health', async (req, res) => {
   const { checkConnection } = require('./src/config/database');
