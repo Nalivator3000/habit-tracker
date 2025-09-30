@@ -160,9 +160,21 @@
         }
 
         .badge-progress {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3B82F6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge-progress.complete {
             background: rgba(16, 185, 129, 0.2);
             color: var(--color-success);
             border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-progress.incomplete {
+            background: rgba(107, 114, 128, 0.2);
+            color: #6B7280;
+            border: 1px solid rgba(107, 114, 128, 0.3);
         }
 
         .badge-streak {
@@ -327,7 +339,7 @@
                     <span class="habit-name">Morning Exercise</span>
                     <div class="habit-badges">
                         <span class="badge badge-frequency">📅 Daily</span>
-                        <span class="badge badge-progress">✅ 2/3</span>
+                        <span class="badge badge-progress">🔵 2/3</span>
                         <span class="badge badge-streak">🔥 5 days</span>
                     </div>
                 </div>
@@ -355,7 +367,7 @@
                     <span class="habit-name">Read Books</span>
                     <div class="habit-badges">
                         <span class="badge badge-frequency">📅 Daily</span>
-                        <span class="badge badge-progress">✅ 1/1</span>
+                        <span class="badge badge-progress complete">✅ 1/1</span>
                         <span class="badge badge-streak">🔥 12 days</span>
                     </div>
                 </div>
@@ -386,7 +398,7 @@
                     <span class="habit-name">Drink Water</span>
                     <div class="habit-badges">
                         <span class="badge badge-frequency">📅 Daily</span>
-                        <span class="badge badge-progress">✅ 0/8</span>
+                        <span class="badge badge-progress incomplete">⭕ 0/8</span>
                         <span class="badge badge-streak">🔥 3 days</span>
                     </div>
                 </div>
@@ -417,7 +429,7 @@
                     <span class="habit-name">Yoga Session</span>
                     <div class="habit-badges">
                         <span class="badge badge-frequency">🗓️ Weekly</span>
-                        <span class="badge badge-progress">✅ 1/1</span>
+                        <span class="badge badge-progress complete">✅ 1/1</span>
                         <span class="badge badge-streak">🔥 8 weeks</span>
                     </div>
                 </div>
@@ -553,6 +565,29 @@
             });
         });
 
+        /**
+         * Get progress badge HTML with correct icon and styling
+         * @param {number} completed - Number completed
+         * @param {number} target - Target count
+         * @returns {string} - HTML for progress badge
+         */
+        function getProgressBadge(completed, target) {
+            let icon, cssClass;
+
+            if (completed === 0) {
+                icon = '⭕';
+                cssClass = 'badge-progress incomplete';
+            } else if (completed >= target) {
+                icon = '✅';
+                cssClass = 'badge-progress complete';
+            } else {
+                icon = '🔵';
+                cssClass = 'badge-progress';
+            }
+
+            return `<span class="badge ${cssClass}">${icon} ${completed}/${target}</span>`;
+        }
+
         // ===== EXAMPLE USAGE =====
         // Example: Calculate deadline for a daily habit
         const dailyHabit = {
@@ -563,6 +598,11 @@
         const status = getDeadlineStatus(deadline);
         console.log('Daily habit deadline:', deadline);
         console.log('Deadline status:', status);
+
+        // Example: Generate progress badge
+        console.log('Progress 0/8:', getProgressBadge(0, 8));
+        console.log('Progress 2/3:', getProgressBadge(2, 3));
+        console.log('Progress 1/1:', getProgressBadge(1, 1));
     </script>
 </body>
 </html>
