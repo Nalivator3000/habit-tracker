@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Habit Cards Design Demo</title>
+    <style>
+        :root {
+            --bg-primary: #0A0A0F;
+            --glass-light: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.37);
+
+            --color-success: #10b981;
+            --color-warning: #f59e0b;
+            --color-danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui;
+            background: var(--bg-primary);
+            color: white;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        /* ===== NEW HABIT CARD DESIGN ===== */
+        .habit-card {
+            background: var(--glass-light);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-glass);
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 1rem;
+            align-items: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .habit-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Deadline warning borders */
+        .habit-card.deadline-warning {
+            border-color: var(--color-warning);
+            border-width: 2px;
+        }
+
+        .habit-card.deadline-urgent {
+            border-color: var(--color-danger);
+            border-width: 2px;
+            animation: pulse-urgent 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-urgent {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        }
+
+        /* Checkbox Section */
+        .habit-checkbox {
+            position: relative;
+        }
+
+        .habit-checkbox input[type="checkbox"] {
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .habit-checkbox input[type="checkbox"]:hover {
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: scale(1.1);
+        }
+
+        .habit-checkbox input[type="checkbox"]:checked {
+            background: var(--color-success);
+            border-color: var(--color-success);
+        }
+
+        .habit-checkbox input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* Main Content */
+        .habit-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .habit-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .habit-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .habit-badges {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .badge-frequency {
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .badge-progress {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--color-success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-streak {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--color-warning);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .habit-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            flex-wrap: wrap;
+        }
+
+        .habit-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        /* Deadline Warning */
+        .deadline-warning-badge {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--color-warning);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .deadline-urgent-badge {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--color-danger);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* Context Menu Button */
+        .habit-actions {
+            position: relative;
+        }
+
+        .menu-button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .menu-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .context-menu {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 0.5rem;
+            background: rgba(20, 20, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 0.5rem;
+            min-width: 150px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 100;
+        }
+
+        .context-menu.active {
+            display: block;
+            animation: slideDown 0.2s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .context-menu-item {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        .context-menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .context-menu-item.danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--color-danger);
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .habit-card {
+                grid-template-columns: auto 1fr;
+                gap: 1rem;
+            }
+
+            .habit-actions {
+                grid-column: 1 / -1;
+                justify-self: end;
+            }
+
+            .deadline-warning-badge,
+            .deadline-urgent-badge {
+                grid-column: 1 / -1;
+                justify-self: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 New Habit Card Design</h1>
+
+        <!-- Normal Habit -->
+        <div class="habit-card">
+            <div class="habit-checkbox">
+                <input type="checkbox" id="habit1">
+            </div>
+            <div class="habit-content">
+                <div class="habit-header">
+                    <span class="habit-name">Morning Exercise</span>
+                    <div class="habit-badges">
+                        <span class="badge badge-frequency">📅 Daily</span>
+                        <span class="badge badge-progress">✅ 2/3</span>
+                        <span class="badge badge-streak">🔥 5 days</span>
+                    </div>
+                </div>
+                <div class="habit-meta">
+                    <span class="habit-meta-item">⭐ Difficulty: 3/5</span>
+                    <span class="habit-meta-item">🎯 Target: 3x per day</span>
+                </div>
+            </div>
+            <div class="habit-actions">
+                <button class="menu-button" onclick="toggleMenu(this)">⋮</button>
+                <div class="context-menu">
+                    <div class="context-menu-item" onclick="alert('Edit habit')">✏️ Edit</div>
+                    <div class="context-menu-item danger" onclick="alert('Delete habit')">🗑️ Delete</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Habit with 12h Warning -->
+        <div class="habit-card deadline-warning">
+            <div class="habit-checkbox">
+                <input type="checkbox" id="habit2">
+            </div>
+            <div class="habit-content">
+                <div class="habit-header">
+                    <span class="habit-name">Read Books</span>
+                    <div class="habit-badges">
+                        <span class="badge badge-frequency">📅 Daily</span>
+                        <span class="badge badge-progress">✅ 1/1</span>
+                        <span class="badge badge-streak">🔥 12 days</span>
+                    </div>
+                </div>
+                <div class="habit-meta">
+                    <span class="habit-meta-item">⭐ Difficulty: 2/5</span>
+                    <span class="habit-meta-item">🎯 Target: 1x per day</span>
+                </div>
+            </div>
+            <div class="deadline-warning-badge">
+                ⚠️ Deadline in 8h
+            </div>
+            <div class="habit-actions">
+                <button class="menu-button" onclick="toggleMenu(this)">⋮</button>
+                <div class="context-menu">
+                    <div class="context-menu-item" onclick="alert('Edit habit')">✏️ Edit</div>
+                    <div class="context-menu-item danger" onclick="alert('Delete habit')">🗑️ Delete</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Habit with 4h Urgent Warning -->
+        <div class="habit-card deadline-urgent">
+            <div class="habit-checkbox">
+                <input type="checkbox" id="habit3">
+            </div>
+            <div class="habit-content">
+                <div class="habit-header">
+                    <span class="habit-name">Drink Water</span>
+                    <div class="habit-badges">
+                        <span class="badge badge-frequency">📅 Daily</span>
+                        <span class="badge badge-progress">✅ 0/8</span>
+                        <span class="badge badge-streak">🔥 3 days</span>
+                    </div>
+                </div>
+                <div class="habit-meta">
+                    <span class="habit-meta-item">⭐ Difficulty: 1/5</span>
+                    <span class="habit-meta-item">🎯 Target: 8x per day</span>
+                </div>
+            </div>
+            <div class="deadline-warning-badge deadline-urgent-badge">
+                🔥 СРОЧНО! До дедлайна 2 часа
+            </div>
+            <div class="habit-actions">
+                <button class="menu-button" onclick="toggleMenu(this)">⋮</button>
+                <div class="context-menu">
+                    <div class="context-menu-item" onclick="alert('Edit habit')">✏️ Edit</div>
+                    <div class="context-menu-item danger" onclick="alert('Delete habit')">🗑️ Delete</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly Habit -->
+        <div class="habit-card">
+            <div class="habit-checkbox">
+                <input type="checkbox" id="habit4" checked>
+            </div>
+            <div class="habit-content">
+                <div class="habit-header">
+                    <span class="habit-name">Yoga Session</span>
+                    <div class="habit-badges">
+                        <span class="badge badge-frequency">🗓️ Weekly</span>
+                        <span class="badge badge-progress">✅ 1/1</span>
+                        <span class="badge badge-streak">🔥 8 weeks</span>
+                    </div>
+                </div>
+                <div class="habit-meta">
+                    <span class="habit-meta-item">⭐ Difficulty: 4/5</span>
+                    <span class="habit-meta-item">🎯 Target: 1x per week</span>
+                </div>
+            </div>
+            <div class="habit-actions">
+                <button class="menu-button" onclick="toggleMenu(this)">⋮</button>
+                <div class="context-menu">
+                    <div class="context-menu-item" onclick="alert('Edit habit')">✏️ Edit</div>
+                    <div class="context-menu-item danger" onclick="alert('Delete habit')">🗑️ Delete</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== DEADLINE CALCULATION LOGIC =====
+        /**
+         * Calculate deadline for a habit based on frequency and last completion
+         * @param {Object} habit - Habit object with frequency_type, frequency_value, last_completed
+         * @returns {Date|null} - Deadline datetime or null if no deadline
+         */
+        function calculateDeadline(habit) {
+            const now = new Date();
+            const lastCompleted = habit.last_completed ? new Date(habit.last_completed) : null;
+
+            switch (habit.frequency_type) {
+                case 'daily':
+                    // Deadline is end of day (23:59:59)
+                    const endOfDay = new Date(now);
+                    endOfDay.setHours(23, 59, 59, 999);
+                    return endOfDay;
+
+                case 'every_n_days':
+                    if (!lastCompleted) return null;
+                    // Deadline is N days after last completion at same time
+                    const nextDeadline = new Date(lastCompleted);
+                    nextDeadline.setDate(nextDeadline.getDate() + (habit.frequency_value || 1));
+                    nextDeadline.setHours(23, 59, 59, 999);
+                    return nextDeadline;
+
+                case 'weekly':
+                    // Deadline is end of week (Sunday 23:59)
+                    const endOfWeek = new Date(now);
+                    const daysUntilSunday = 7 - now.getDay();
+                    endOfWeek.setDate(now.getDate() + daysUntilSunday);
+                    endOfWeek.setHours(23, 59, 59, 999);
+                    return endOfWeek;
+
+                case 'monthly':
+                    // Deadline is end of month
+                    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                    endOfMonth.setHours(23, 59, 59, 999);
+                    return endOfMonth;
+
+                default:
+                    return null;
+            }
+        }
+
+        /**
+         * Get deadline warning status
+         * @param {Date} deadline - Deadline datetime
+         * @returns {Object} - { level: 'none'|'warning'|'urgent', hoursLeft: number, message: string }
+         */
+        function getDeadlineStatus(deadline) {
+            if (!deadline) return { level: 'none', hoursLeft: null, message: null };
+
+            const now = new Date();
+            const diff = deadline - now;
+            const hoursLeft = Math.floor(diff / (1000 * 60 * 60));
+            const minutesLeft = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+            if (diff < 0) {
+                return { level: 'overdue', hoursLeft: 0, message: '⏰ Просрочено!' };
+            } else if (hoursLeft < 4) {
+                return {
+                    level: 'urgent',
+                    hoursLeft,
+                    message: `🔥 СРОЧНО! До дедлайна ${hoursLeft}ч ${minutesLeft}м`
+                };
+            } else if (hoursLeft < 12) {
+                return {
+                    level: 'warning',
+                    hoursLeft,
+                    message: `⚠️ До дедлайна ${hoursLeft}ч`
+                };
+            }
+
+            return { level: 'none', hoursLeft, message: null };
+        }
+
+        // ===== UI INTERACTION =====
+        // Toggle context menu
+        function toggleMenu(button) {
+            const menu = button.nextElementSibling;
+            const allMenus = document.querySelectorAll('.context-menu');
+
+            // Close all other menus
+            allMenus.forEach(m => {
+                if (m !== menu) m.classList.remove('active');
+            });
+
+            // Toggle current menu
+            menu.classList.toggle('active');
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.habit-actions')) {
+                document.querySelectorAll('.context-menu').forEach(menu => {
+                    menu.classList.remove('active');
+                });
+            }
+        });
+
+        // Checkbox animation
+        document.querySelectorAll('.habit-checkbox input').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const card = e.target.closest('.habit-card');
+                if (e.target.checked) {
+                    card.style.opacity = '0.6';
+                    // TODO: Send completion to backend
+                    console.log('Habit completed:', e.target.id);
+                } else {
+                    card.style.opacity = '1';
+                    // TODO: Undo completion
+                    console.log('Habit uncompleted:', e.target.id);
+                }
+            });
+        });
+
+        // ===== EXAMPLE USAGE =====
+        // Example: Calculate deadline for a daily habit
+        const dailyHabit = {
+            frequency_type: 'daily',
+            last_completed: null
+        };
+        const deadline = calculateDeadline(dailyHabit);
+        const status = getDeadlineStatus(deadline);
+        console.log('Daily habit deadline:', deadline);
+        console.log('Deadline status:', status);
+    </script>
+</body>
+</html>
