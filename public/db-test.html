@@ -3,8 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Database Testing Interface</title>
+    <title>FlowHabits - Testing Lab</title>
     <style>
+        /* ===== DESIGN SYSTEM 2025 ===== */
+        :root {
+            /* Dark Theme Colors */
+            --bg-primary: #0A0A0F;
+            --bg-secondary: #121218;
+            --bg-tertiary: #1A1A24;
+
+            /* Glassmorphism */
+            --glass-light: rgba(255, 255, 255, 0.05);
+            --glass-medium: rgba(255, 255, 255, 0.08);
+            --glass-dark: rgba(0, 0, 0, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.12);
+
+            /* AI-Inspired Gradients */
+            --gradient-neural: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
+            --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+            --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+            --gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+
+            /* Depth & Shadows */
+            --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.37);
+            --shadow-elevated: 0 15px 35px rgba(0, 0, 0, 0.5);
+            --shadow-floating: 0 25px 50px rgba(0, 0, 0, 0.6);
+
+            /* Typography */
+            --font-display: -apple-system-ui-serif, ui-serif, 'SF Pro Display', system-ui;
+            --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui;
+
+            /* Animations */
+            --transition-smooth: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,164 +45,471 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: white;
             min-height: 100vh;
-            color: #333;
-            padding: 2rem;
+            overflow-x: hidden;
+            padding: 2rem 1rem;
+        }
+
+        /* ===== ANIMATED BACKGROUND ===== */
+        .bg-animated {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: var(--gradient-neural);
+            opacity: 0.08;
+            animation: gradientShift 20s ease infinite;
+        }
+
+        .bg-animated::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(102, 126, 234, 0.2) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 70%, rgba(245, 101, 108, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+            animation: float 25s ease-in-out infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-15px) rotate(0.5deg); }
+            66% { transform: translateY(8px) rotate(-0.5deg); }
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
+        }
+
+        .header {
+            background: var(--glass-light);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
             padding: 2rem;
-            backdrop-filter: blur(10px);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-glass);
+            position: relative;
+            overflow: hidden;
         }
 
-        h1 {
-            color: #4a5568;
-            margin-bottom: 2rem;
-            text-align: center;
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-neural);
+            animation: shimmer 4s ease-in-out infinite;
         }
 
-        .test-section {
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .header h1 {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            font-weight: 800;
+            background: var(--gradient-neural);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 6s ease infinite;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            background: var(--glass-dark);
+            border: 1px solid var(--glass-border);
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: var(--transition-smooth);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-link:hover {
+            background: var(--glass-medium);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glass);
+        }
+
+        .nav-link.active {
+            background: var(--gradient-neural);
+            border-color: transparent;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
             margin-bottom: 2rem;
-            padding: 1rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
         }
 
         .test-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--glass-light);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
             color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 16px;
-            margin: 10px;
-            transition: transform 0.2s;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: var(--transition-smooth);
+            box-shadow: var(--shadow-glass);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
         }
 
-        .test-button:hover {
+        .test-button:hover:not(:disabled) {
+            background: var(--glass-medium);
             transform: translateY(-2px);
+            box-shadow: var(--shadow-elevated);
+        }
+
+        .test-button:active:not(:disabled) {
+            transform: translateY(0);
         }
 
         .test-button:disabled {
-            background: #cbd5e0;
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
 
+        .test-button.primary {
+            background: var(--gradient-neural);
+            border-color: transparent;
+        }
+
+        .test-button.danger {
+            background: var(--gradient-danger);
+            border-color: transparent;
+        }
+
+        .test-section {
+            background: var(--glass-light);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-glass);
+        }
+
+        .test-section h3 {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .manual-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .manual-controls input {
+            background: var(--glass-dark);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            min-width: 200px;
+            transition: var(--transition-smooth);
+        }
+
+        .manual-controls input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .manual-controls input:focus {
+            outline: none;
+            border-color: rgba(102, 126, 234, 0.5);
+            background: var(--glass-light);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
         .results {
-            background: #f8f9fa;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-            max-height: 500px;
+            background: var(--glass-light);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            max-height: 600px;
             overflow-y: auto;
+            box-shadow: var(--shadow-glass);
+        }
+
+        .results::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .results::-webkit-scrollbar-track {
+            background: var(--glass-dark);
+            border-radius: 10px;
+        }
+
+        .results::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 10px;
+        }
+
+        .results::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
         .test-result {
             margin: 1rem 0;
-            padding: 1rem;
-            border-radius: 6px;
-            border-left: 4px solid #10B981;
+            padding: 1.25rem;
+            border-radius: 12px;
+            border-left: 4px solid;
+            background: var(--glass-dark);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
         .test-result.error {
-            border-left-color: #EF4444;
-            background: #FEE2E2;
+            border-left-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
         }
 
         .test-result.success {
-            border-left-color: #10B981;
-            background: #D1FAE5;
+            border-left-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .test-result.loading {
+            border-left-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
         }
 
         .test-title {
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            color: #1a202c;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            justify-content: space-between;
+        }
+
+        .test-title small {
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 500;
+            font-size: 0.8rem;
         }
 
         .test-data {
-            background: #ffffff;
+            background: var(--bg-primary);
             padding: 1rem;
-            border-radius: 4px;
-            margin-top: 0.5rem;
+            border-radius: 8px;
+            margin-top: 0.75rem;
             font-family: 'Courier New', monospace;
-            font-size: 14px;
-            max-height: 300px;
+            font-size: 0.85rem;
+            max-height: 400px;
             overflow-y: auto;
+            color: #10b981;
+            border: 1px solid var(--glass-border);
         }
 
-        .loading {
+        .loading-placeholder {
             text-align: center;
-            color: #666;
+            color: rgba(255, 255, 255, 0.5);
             font-style: italic;
+            padding: 2rem;
         }
 
         .status-indicator {
             display: inline-block;
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             margin-right: 8px;
         }
 
-        .status-success { background-color: #10B981; }
-        .status-error { background-color: #EF4444; }
+        .status-success { background-color: #10b981; box-shadow: 0 0 10px #10b981; }
+        .status-error { background-color: #ef4444; box-shadow: 0 0 10px #ef4444; }
         .status-loading {
-            background-color: #F59E0B;
+            background-color: #f59e0b;
+            box-shadow: 0 0 10px #f59e0b;
             animation: pulse 1s infinite;
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
         }
 
-        .quick-actions {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            margin-bottom: 2rem;
+        /* Build Version Badge */
+        .build-version-badge {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background: var(--glass-dark);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 500;
+            z-index: 1000;
+            user-select: none;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .build-version-badge .build-label {
+            color: rgba(255, 255, 255, 0.5);
+            margin-right: 0.25rem;
+        }
+
+        .build-version-badge .build-number {
+            background: var(--gradient-neural);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem 0.5rem;
+            }
+
+            .header {
+                padding: 1.5rem;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .manual-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .manual-controls input {
+                width: 100%;
+            }
+
+            .results {
+                max-height: 400px;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="bg-animated"></div>
+
     <div class="container">
-        <h1>🧪 Database Testing Interface</h1>
+        <div class="header">
+            <h1>🧪 Testing Lab</h1>
+            <p>Comprehensive testing interface for FlowHabits</p>
+            <div class="nav-links">
+                <a href="/app.html" class="nav-link">✨ Dashboard</a>
+                <a href="/calendar.html" class="nav-link">📅 Calendar</a>
+                <a href="/db-test.html" class="nav-link active">🔧 Testing</a>
+            </div>
+        </div>
 
         <div class="quick-actions">
-            <button class="test-button" onclick="runAllTests()">🚀 Run All Tests</button>
+            <button class="test-button primary" onclick="runAllTests()">🚀 Run All Tests</button>
             <button class="test-button" onclick="runDatabaseTest()">📊 Database Structure</button>
-            <button class="test-button" onclick="testHabitLogging()">✅ Test Habit Logging</button>
-            <button class="test-button" onclick="testHabitCRUD()">🔄 Test CRUD Operations</button>
-            <button class="test-button" onclick="testUIElements()">🎨 Test UI Elements</button>
-            <button class="test-button" onclick="testFormValidation()">📝 Test Form Validation</button>
-            <button class="test-button" onclick="testResponseHandling()">🌐 Test API Response Handling</button>
-            <button class="test-button" onclick="testFrequencySystem()">📅 Test Frequency System</button>
-            <button class="test-button" onclick="testDatabaseMigration()">🔄 Test Schema Migration</button>
-            <button class="test-button" onclick="resetDatabase()">🧹 Reset Database</button>
+            <button class="test-button" onclick="testHabitLogging()">✅ Habit Logging</button>
+            <button class="test-button" onclick="testHabitCRUD()">🔄 CRUD Operations</button>
+            <button class="test-button" onclick="testUIElements()">🎨 UI Elements</button>
+            <button class="test-button" onclick="testFormValidation()">📝 Form Validation</button>
+            <button class="test-button" onclick="testResponseHandling()">🌐 API Responses</button>
+            <button class="test-button" onclick="testFrequencySystem()">📅 Frequency System</button>
+            <button class="test-button" onclick="testDatabaseMigration()">🔄 Schema Migration</button>
+            <button class="test-button danger" onclick="resetDatabase()">🧹 Reset Database</button>
             <button class="test-button" onclick="clearResults()">🗑️ Clear Results</button>
         </div>
 
         <div class="test-section">
             <h3>Manual Testing</h3>
-            <div style="display: flex; gap: 1rem; align-items: center; margin: 1rem 0;">
-                <input type="text" id="habitId" placeholder="Habit ID (1-3)" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                <button class="test-button" onclick="logHabitCompletion()">Mark Complete</button>
-                <button class="test-button" onclick="deleteHabit()">Delete Habit</button>
+            <div class="manual-controls">
+                <input type="text" id="habitId" placeholder="Habit ID (e.g., 1, 2, 3...)">
+                <button class="test-button" onclick="logHabitCompletion()">✅ Mark Complete</button>
+                <button class="test-button danger" onclick="deleteHabit()">🗑️ Delete Habit</button>
             </div>
         </div>
 
         <div class="results" id="results">
-            <p class="loading">Click a test button to start testing...</p>
+            <p class="loading-placeholder">Click a test button to start testing...</p>
         </div>
+    </div>
+
+    <!-- Build Version Badge -->
+    <div class="build-version-badge">
+        <span class="build-label">Build:</span>
+        <span class="build-number">v2025.1-glassmorphism</span>
     </div>
 
     <script>
@@ -204,16 +544,18 @@
             const container = document.getElementById('results');
 
             if (testResults.length === 0) {
-                container.innerHTML = '<p class="loading">Click a test button to start testing...</p>';
+                container.innerHTML = '<p class="loading-placeholder">Click a test button to start testing...</p>';
                 return;
             }
 
             container.innerHTML = testResults.map(result => `
                 <div class="test-result ${result.status}">
                     <div class="test-title">
-                        <span class="status-indicator status-${result.status}"></span>
-                        ${result.title}
-                        <small style="float: right; color: #666;">${new Date(result.timestamp).toLocaleTimeString()}</small>
+                        <span>
+                            <span class="status-indicator status-${result.status}"></span>
+                            ${result.title}
+                        </span>
+                        <small>${new Date(result.timestamp).toLocaleTimeString()}</small>
                     </div>
                     ${result.data ? `<div class="test-data">${JSON.stringify(result.data, null, 2)}</div>` : ''}
                 </div>
@@ -235,7 +577,6 @@
         async function testHabitLogging() {
             addResult('Habit Logging Test', 'loading');
             try {
-                // Test logging habit 1
                 const response = await fetchAPI('/1/log', {
                     method: 'POST',
                     body: JSON.stringify({
@@ -254,14 +595,11 @@
         async function testHabitCRUD() {
             addResult('CRUD Operations Test', 'loading');
             try {
-                // Test GET habits
                 const getResponse = await fetchAPI('/');
                 addResult('GET Habits ✅', 'success', { count: getResponse.habits.length, habits: getResponse.habits });
 
-                // Test GET today's logs
                 const todayResponse = await fetchAPI('/logs/today');
                 addResult('GET Today Logs ✅', 'success', { count: todayResponse.count, logs: todayResponse.logs });
-
             } catch (error) {
                 addResult('CRUD Operations Test ❌', 'error', { error: error.message });
             }
@@ -331,11 +669,9 @@
             addResult('All tests completed! 🎉', 'success');
         }
 
-        // Test UI Elements
         async function testUIElements() {
             addResult('UI Elements Test', 'loading');
             try {
-                // Test current testing interface elements
                 const uiTests = [
                     {
                         name: 'Testing Interface Container',
@@ -351,7 +687,7 @@
                         name: 'Test Buttons Available',
                         test: () => {
                             const buttons = document.querySelectorAll('.test-button');
-                            return buttons.length >= 5; // Should have multiple test buttons
+                            return buttons.length >= 5;
                         },
                         expected: true
                     },
@@ -376,13 +712,11 @@
 
                 const allPassed = results.every(r => r.passed);
                 addResult(`UI Elements Test ${allPassed ? '✅' : '❌'}`, allPassed ? 'success' : 'error', results);
-
             } catch (error) {
                 addResult('UI Elements Test ❌', 'error', { error: error.message });
             }
         }
 
-        // Test Form Validation
         async function testFormValidation() {
             addResult('Form Validation Test', 'loading');
             try {
@@ -395,13 +729,12 @@
                                     method: 'POST',
                                     body: JSON.stringify({})
                                 });
-                                return false; // If we get here, it didn't fail as expected
+                                return false;
                             } catch (error) {
-                                // Should get 400 status code for validation error
                                 return error.message.includes('400') || error.message.includes('Validation');
                             }
                         },
-                        shouldFail: false // We now expect this test to pass by catching the error
+                        shouldFail: false
                     },
                     {
                         name: 'Valid Habit Creation Data',
@@ -410,7 +743,7 @@
                                 const response = await fetchAPI('/', {
                                     method: 'POST',
                                     body: JSON.stringify({
-                                        name: 'Test Habit ' + Date.now(), // Make unique
+                                        name: 'Test Habit ' + Date.now(),
                                         description: 'Test Description',
                                         frequency_type: 'daily',
                                         target_count: 1,
@@ -437,15 +770,14 @@
                                         status: 'completed'
                                     })
                                 });
-                                return false; // If we get here, it didn't fail as expected
+                                return false;
                             } catch (error) {
-                                // Should fail with error about foreign key or habit not found
                                 return error.message.includes('foreign key') ||
                                        error.message.includes('violates') ||
                                        error.message.includes('500');
                             }
                         },
-                        shouldFail: false // We expect this test to pass by catching the error
+                        shouldFail: false
                     }
                 ];
 
@@ -461,7 +793,7 @@
                             actualResult: result
                         });
                     } catch (error) {
-                        const passed = test.shouldFail; // If it should fail and threw error, it passed
+                        const passed = test.shouldFail;
                         results.push({
                             name: test.name,
                             passed: passed,
@@ -473,13 +805,11 @@
 
                 const allPassed = results.every(r => r.passed);
                 addResult(`Form Validation Test ${allPassed ? '✅' : '❌'}`, allPassed ? 'success' : 'error', results);
-
             } catch (error) {
                 addResult('Form Validation Test ❌', 'error', { error: error.message });
             }
         }
 
-        // Test API Response Handling
         async function testResponseHandling() {
             addResult('API Response Handling Test', 'loading');
             try {
@@ -530,13 +860,11 @@
 
                 const allPassed = results.every(r => r.passed);
                 addResult(`API Response Handling Test ${allPassed ? '✅' : '❌'}`, allPassed ? 'success' : 'error', results);
-
             } catch (error) {
                 addResult('API Response Handling Test ❌', 'error', { error: error.message });
             }
         }
 
-        // Reset Database Function
         async function resetDatabase() {
             if (!confirm('Are you sure you want to reset the entire database? This will delete all habits and logs!')) {
                 return;
@@ -547,11 +875,9 @@
                 const response = await fetchAPI('/reset-database', { method: 'POST' });
                 addResult('Database Reset ✅', 'success', response);
 
-                // Run a quick verification test after reset
                 setTimeout(async () => {
                     await runDatabaseTest();
                 }, 2000);
-
             } catch (error) {
                 addResult('Database Reset ❌', 'error', { error: error.message });
             }
@@ -562,27 +888,22 @@
             renderResults();
         }
 
-        // Test Database Migration for Frequency System
         async function testDatabaseMigration() {
             addResult('Database Migration Test', 'loading');
             try {
-                // Test the schema migration endpoint
                 const response = await fetchAPI('/update-frequency-schema', {
                     method: 'POST'
                 });
-
                 addResult('Database Migration Test ✅', 'success', response);
             } catch (error) {
                 addResult('Database Migration Test ❌', 'error', { error: error.message });
             }
         }
 
-        // Test Frequency System
         async function testFrequencySystem() {
             addResult('Frequency System Test', 'loading');
 
             try {
-                // Test data for different frequency types
                 const frequencyTestData = [
                     {
                         name: 'Daily 3x Test',
@@ -640,14 +961,13 @@
 
                 const results = [];
 
-                // Test creating habits with different frequency types
                 for (const habitData of frequencyTestData) {
                     try {
                         const response = await fetchAPI('/', {
                             method: 'POST',
                             body: JSON.stringify({
                                 ...habitData,
-                                name: habitData.name + ' ' + Date.now() // Make unique
+                                name: habitData.name + ' ' + Date.now()
                             })
                         });
 
@@ -658,9 +978,7 @@
                             response: response
                         });
 
-                        // Small delay between requests
                         await new Promise(resolve => setTimeout(resolve, 100));
-
                     } catch (error) {
                         results.push({
                             frequency_type: habitData.frequency_type,
@@ -671,7 +989,6 @@
                     }
                 }
 
-                // Test next due date calculations
                 addResult('Frequency Habit Creation ✅', 'success', {
                     totalTests: frequencyTestData.length,
                     successful: results.filter(r => r.created).length,
@@ -679,15 +996,12 @@
                     results: results
                 });
 
-                // Test frequency validation
                 await testFrequencyValidation();
-
             } catch (error) {
                 addResult('Frequency System Test ❌', 'error', { error: error.message });
             }
         }
 
-        // Test frequency validation rules
         async function testFrequencyValidation() {
             addResult('Frequency Validation Test', 'loading');
 
@@ -706,7 +1020,6 @@
                         data: {
                             name: 'Every N Test',
                             frequency_type: 'every_n_days'
-                            // Missing frequency_value
                         },
                         shouldFail: true
                     },
@@ -715,7 +1028,6 @@
                         data: {
                             name: 'Monthly Test',
                             frequency_type: 'monthly'
-                            // Missing frequency_value for day
                         },
                         shouldFail: true
                     },
@@ -747,7 +1059,6 @@
                             body: JSON.stringify(test.data)
                         });
 
-                        // If we got here and it should fail, that's incorrect
                         results.push({
                             name: test.name,
                             shouldFail: test.shouldFail,
@@ -755,9 +1066,7 @@
                             passed: !test.shouldFail,
                             response: response
                         });
-
                     } catch (error) {
-                        // If it failed and should fail, that's correct
                         results.push({
                             name: test.name,
                             shouldFail: test.shouldFail,
@@ -773,7 +1082,6 @@
                 const allPassed = results.every(r => r.passed);
                 addResult(`Frequency Validation Test ${allPassed ? '✅' : '❌'}`,
                          allPassed ? 'success' : 'error', results);
-
             } catch (error) {
                 addResult('Frequency Validation Test ❌', 'error', { error: error.message });
             }

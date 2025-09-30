@@ -3,8 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Habit Tracker - API Server</title>
+    <title>FlowHabits - Build Better Habits</title>
     <style>
+        /* ===== DESIGN SYSTEM 2025 ===== */
+        :root {
+            /* Dark Theme Colors */
+            --bg-primary: #0A0A0F;
+            --bg-secondary: #121218;
+            --bg-tertiary: #1A1A24;
+
+            /* Glassmorphism */
+            --glass-light: rgba(255, 255, 255, 0.05);
+            --glass-medium: rgba(255, 255, 255, 0.08);
+            --glass-dark: rgba(0, 0, 0, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.12);
+
+            /* AI-Inspired Gradients */
+            --gradient-neural: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
+            --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+
+            /* Depth & Shadows */
+            --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.37);
+            --shadow-elevated: 0 15px 35px rgba(0, 0, 0, 0.5);
+            --shadow-floating: 0 25px 50px rgba(0, 0, 0, 0.6);
+
+            /* Typography */
+            --font-display: -apple-system-ui-serif, ui-serif, 'SF Pro Display', system-ui;
+            --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui;
+
+            /* Animations */
+            --transition-smooth: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,240 +43,458 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: white;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            overflow: hidden;
+            padding: 1rem;
+        }
+
+        /* ===== ANIMATED BACKGROUND ===== */
+        .bg-animated {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: var(--gradient-neural);
+            opacity: 0.08;
+            animation: gradientShift 20s ease infinite;
+        }
+
+        .bg-animated::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(102, 126, 234, 0.2) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 70%, rgba(245, 101, 108, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+            animation: float 25s ease-in-out infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-15px) rotate(0.5deg); }
+            66% { transform: translateY(8px) rotate(-0.5deg); }
         }
 
         .container {
+            background: var(--glass-light);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 900px;
+            width: 100%;
+            box-shadow: var(--shadow-floating);
+            position: relative;
+            overflow: hidden;
+            animation: cardFadeIn 0.8s ease;
+        }
+
+        @keyframes cardFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-neural);
+            animation: shimmer 4s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .header {
             text-align: center;
-            max-width: 600px;
-            padding: 2rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 3rem;
         }
 
         .logo {
-            font-size: 3rem;
+            font-size: 4rem;
             margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
         }
 
         h1 {
+            font-family: var(--font-display);
             font-size: 2.5rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(45deg, #fff, #f0f0f0);
+            font-weight: 800;
+            background: var(--gradient-neural);
+            background-size: 200% 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            animation: gradientShift 6s ease infinite;
+            margin-bottom: 1rem;
         }
 
-        p {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
+        .tagline {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
         }
 
         .features {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 1.5rem;
-            margin: 2rem 0;
+            margin: 2.5rem 0;
         }
 
         .feature {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 1.5rem;
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--glass-dark);
+            border: 1px solid var(--glass-border);
+            padding: 1.75rem;
+            border-radius: 16px;
+            transition: var(--transition-smooth);
+        }
+
+        .feature:hover {
+            background: var(--glass-light);
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-glass);
         }
 
         .feature-icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            display: block;
         }
 
         .feature h3 {
-            font-size: 1.2rem;
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-weight: 700;
             margin-bottom: 0.5rem;
+            color: white;
         }
 
         .feature p {
             font-size: 0.9rem;
-            margin: 0;
-            opacity: 0.8;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.5;
         }
 
-        .api-info {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 1.5rem;
-            border-radius: 15px;
+        .api-section {
+            background: var(--glass-dark);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
             margin: 2rem 0;
             border-left: 4px solid #10b981;
         }
 
-        .api-info h3 {
-            margin-bottom: 1rem;
+        .api-section h3 {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
             color: #10b981;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .endpoints {
             display: grid;
-            gap: 0.5rem;
-            text-align: left;
+            gap: 0.75rem;
         }
 
         .endpoint {
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
             background: rgba(0, 0, 0, 0.3);
-            padding: 0.5rem;
-            border-radius: 5px;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.8);
+            border: 1px solid var(--glass-border);
+            transition: var(--transition-smooth);
+        }
+
+        .endpoint:hover {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: rgba(16, 185, 129, 0.3);
         }
 
         .method {
             color: #10b981;
             font-weight: bold;
+            padding: 0.25rem 0.5rem;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 6px;
+            margin-right: 0.5rem;
         }
 
-        .status {
-            margin-top: 2rem;
-            padding: 1rem;
-            background: rgba(16, 185, 129, 0.2);
-            border-radius: 10px;
+        .status-badge {
+            background: rgba(16, 185, 129, 0.15);
             border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin: 2rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
         }
 
         .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             background: #10b981;
             border-radius: 50%;
-            margin-right: 0.5rem;
+            box-shadow: 0 0 15px #10b981;
             animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.1); }
         }
 
-        .links {
-            margin-top: 2rem;
+        .status-text {
+            font-weight: 600;
+            color: #10b981;
+        }
+
+        .status-time {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+            margin-left: 1rem;
+        }
+
+        .cta-buttons {
             display: flex;
             gap: 1rem;
             justify-content: center;
             flex-wrap: wrap;
+            margin-top: 2rem;
         }
 
-        .link {
-            background: rgba(255, 255, 255, 0.2);
+        .cta-btn {
+            background: var(--gradient-neural);
             color: white;
             text-decoration: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            transition: all 0.3s ease;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: var(--transition-bounce);
+            box-shadow: var(--shadow-glass);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid transparent;
         }
 
-        .link:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
+        .cta-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: var(--shadow-elevated);
+        }
+
+        .cta-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .cta-btn.secondary {
+            background: var(--glass-dark);
+            border: 1px solid var(--glass-border);
+        }
+
+        .cta-btn.secondary:hover {
+            background: var(--glass-light);
+        }
+
+        /* Build Version Badge */
+        .build-version-badge {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background: var(--glass-dark);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 500;
+            z-index: 1000;
+            user-select: none;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .build-version-badge .build-label {
+            color: rgba(255, 255, 255, 0.5);
+            margin-right: 0.25rem;
+        }
+
+        .build-version-badge .build-number {
+            background: var(--gradient-neural);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+            }
+
             .container {
-                margin: 1rem;
-                padding: 1.5rem;
+                padding: 2rem 1.5rem;
             }
 
             h1 {
                 font-size: 2rem;
             }
 
+            .logo {
+                font-size: 3rem;
+            }
+
             .features {
                 grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .cta-btn {
+                justify-content: center;
             }
         }
     </style>
 </head>
 <body>
+    <div class="bg-animated"></div>
+
     <div class="container">
-        <div class="logo">🎯</div>
-        <h1>Habit Tracker</h1>
-        <p>Cross-platform habit tracking application with comprehensive API</p>
+        <div class="header">
+            <div class="logo">✨</div>
+            <h1>FlowHabits</h1>
+            <p class="tagline">Track habits, unlock potential, achieve greatness</p>
+        </div>
 
         <div class="features">
             <div class="feature">
-                <div class="feature-icon">🔐</div>
+                <span class="feature-icon">🔐</span>
                 <h3>Secure Authentication</h3>
-                <p>JWT-based authentication with bcrypt password hashing</p>
+                <p>JWT-based auth with bcrypt encryption for maximum security</p>
             </div>
             <div class="feature">
-                <div class="feature-icon">📊</div>
-                <h3>Habit Analytics</h3>
-                <p>Comprehensive tracking with streaks, completion rates, and insights</p>
+                <span class="feature-icon">📊</span>
+                <h3>Advanced Analytics</h3>
+                <p>Track streaks, completion rates, and progress insights</p>
             </div>
             <div class="feature">
-                <div class="feature-icon">🤖</div>
-                <h3>Telegram Bot</h3>
-                <p>Interactive bot for habit management and daily tracking</p>
+                <span class="feature-icon">🎨</span>
+                <h3>Modern Design</h3>
+                <p>Glassmorphism UI with smooth animations and dark theme</p>
             </div>
             <div class="feature">
-                <div class="feature-icon">🧪</div>
-                <h3>Tested & Reliable</h3>
-                <p>Comprehensive test suite with automated logging and monitoring</p>
+                <span class="feature-icon">🧪</span>
+                <h3>Battle-Tested</h3>
+                <p>Comprehensive test suite with automated monitoring</p>
             </div>
         </div>
 
-        <div class="api-info">
-            <h3>🚀 API Endpoints</h3>
+        <div class="api-section">
+            <h3>🚀 RESTful API</h3>
             <div class="endpoints">
-                <div class="endpoint"><span class="method">GET</span> /health - Health check</div>
-                <div class="endpoint"><span class="method">POST</span> /api/auth/register - User registration</div>
-                <div class="endpoint"><span class="method">POST</span> /api/auth/login - User login</div>
-                <div class="endpoint"><span class="method">GET</span> /api/habits - Get user habits</div>
-                <div class="endpoint"><span class="method">POST</span> /api/habits - Create new habit</div>
-                <div class="endpoint"><span class="method">POST</span> /api/habits/:id/log - Log habit completion</div>
+                <div class="endpoint">
+                    <span class="method">GET</span> /health - Health check endpoint
+                </div>
+                <div class="endpoint">
+                    <span class="method">POST</span> /api/auth/register - Create new account
+                </div>
+                <div class="endpoint">
+                    <span class="method">POST</span> /api/auth/login - Authenticate user
+                </div>
+                <div class="endpoint">
+                    <span class="method">GET</span> /api/habits - Fetch user habits
+                </div>
+                <div class="endpoint">
+                    <span class="method">POST</span> /api/habits - Create new habit
+                </div>
+                <div class="endpoint">
+                    <span class="method">POST</span> /api/habits/:id/log - Log completion
+                </div>
             </div>
         </div>
 
-        <div class="status">
+        <div class="status-badge">
             <span class="status-indicator"></span>
-            <strong>Server Status: Online</strong>
-            <br>
-            <small id="timestamp"></small>
+            <span class="status-text">Server Online</span>
+            <span class="status-time" id="timestamp"></span>
         </div>
 
-        <div class="links">
-            <a href="/app.html" class="link">🚀 Launch App</a>
-            <a href="/admin-setup.html" class="link">🔧 Admin Setup</a>
-            <a href="/health" class="link">🔍 Health Check</a>
-            <a href="/api" class="link">📋 API Docs</a>
-            <a href="https://github.com/Nalivator3000/habit-tracker" class="link" target="_blank">💻 GitHub</a>
+        <div class="cta-buttons">
+            <a href="/app.html" class="cta-btn">🚀 Launch App</a>
+            <a href="/auth.html" class="cta-btn">🔐 Sign In</a>
+            <a href="/calendar.html" class="cta-btn secondary">📅 Calendar</a>
+            <a href="/db-test.html" class="cta-btn secondary">🧪 Testing</a>
+            <a href="/health" class="cta-btn secondary">🔍 Health Check</a>
         </div>
+    </div>
+
+    <!-- Build Version Badge -->
+    <div class="build-version-badge">
+        <span class="build-label">Build:</span>
+        <span class="build-number">v2025.1-glassmorphism</span>
     </div>
 
     <script>
         // Update timestamp
-        document.getElementById('timestamp').textContent =
-            'Last updated: ' + new Date().toLocaleString();
+        function updateTimestamp() {
+            const now = new Date();
+            document.getElementById('timestamp').textContent =
+                now.toLocaleTimeString();
+        }
 
-        // Check health endpoint
+        updateTimestamp();
+        setInterval(updateTimestamp, 1000);
+
+        // Health check
         fetch('/health')
             .then(response => response.json())
             .then(data => {
-                console.log('Health check:', data);
+                console.log('✅ Health check:', data);
             })
             .catch(error => {
-                console.error('Health check failed:', error);
+                console.error('❌ Health check failed:', error);
             });
     </script>
 </body>
